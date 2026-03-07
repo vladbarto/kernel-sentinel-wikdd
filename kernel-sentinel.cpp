@@ -1,13 +1,35 @@
 // kernel-sentinel.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include <iostream>
 #include "threadpool.h"
+#include "console-gui.h"
 
 int main()
 {
-    main1();
-    std::cout << "Hello World!\n";
+    //main1();
+
+    while (true) {
+        renderGui();
+        char command = 0;
+        int success = scanf_s(" %c", &command, 1);
+        if (!success)
+            return 0;
+
+        switch (command) {
+            case '1': { 
+                help(); 
+                break; 
+            }
+            case '2': {
+                exit();
+                return 0;
+            }
+            default: ;
+        }
+        
+    }
+
+    return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

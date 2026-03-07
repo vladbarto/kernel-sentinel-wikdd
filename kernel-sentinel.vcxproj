@@ -125,8 +125,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="console-gui.cpp" />
     <ClCompile Include="kernel-sentinel.cpp" />
     <ClCompile Include="threadpool.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="console-gui.h" />
+    <ClInclude Include="threadpool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
