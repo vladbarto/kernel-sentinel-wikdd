@@ -18,5 +18,8 @@
     <ClCompile Include="kernel-sentinel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="threadpool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

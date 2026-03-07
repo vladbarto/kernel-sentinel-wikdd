@@ -413,7 +413,7 @@ TestThreadPoolRoutine(
     return STATUS_SUCCESS;
 }
 
-int main_entrypoint_threadpool()
+int main1()
 {
     MY_THREAD_POOL tp = { 0 };
     MY_CONTEXT ctx = { 0 };
