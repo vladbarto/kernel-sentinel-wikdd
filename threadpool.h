@@ -11,4 +11,4 @@
 #include <assert.h>
 #include <crtdbg.h>
 
-int main1();
+int startJob();

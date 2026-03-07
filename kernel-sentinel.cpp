@@ -21,6 +21,11 @@ int main()
                 break; 
             }
             case '2': {
+                start();
+                startJob();
+                break;
+            }
+            case '3': {
                 exit();
                 return 0;
             }

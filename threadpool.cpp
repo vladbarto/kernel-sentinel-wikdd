@@ -187,13 +187,27 @@ TpRoutine(
                 LIST_ENTRY* listTail = NULL;
                 MY_WORK_ITEM* workItem = NULL;
 
-                /* todo: Pop one element from list. This must be done with lock taken. */
+                /* [todo]: Pop one element from list. This must be done with lock taken. */
+                AcquireSRWLockExclusive(&threadPool->QueueLock);
+                listTail = ListRemoveTail(&threadPool->Queue);
+                ReleaseSRWLockExclusive(&threadPool->QueueLock);
+                if (NULL == listTail) {
+                    break;
+                }
+
+                workItem = CONTAINING_RECORD(listTail, MY_WORK_ITEM, ListEntry);
 
                 /* If we have an item, we invoke the work routine it and then we free it. */
                 if (NULL != workItem)
                 {
-                    /* todo: call work routine. */
-                    /* todo: ensure memory management :) */
+                    /* [todo]: call work routine. */
+                    if (workItem->WorkRoutine) {
+                        workItem->WorkRoutine(workItem->Context);
+                    }
+
+                    /* [todo]: ensure memory management :) */
+                    free(workItem);
+                    //workItem = NULL;
                 }
 
                 /* If we didn't managed to get a work item, we stop the processing loop. */
@@ -228,7 +242,8 @@ TpUninit(
     /* First set the stop event, if any. */
     if (NULL != ThreadPool->StopThreadPoolEvent)
     {
-        /* todo: signal stop event. */
+        /* [todo]: signal stop event. */
+        SetEvent(ThreadPool->StopThreadPoolEvent);
     }
 
     /* Now wait for threads. */
@@ -238,8 +253,11 @@ TpUninit(
         {
             if (NULL != ThreadPool->ThreadHandles[i])
             {
-                /* todo wait for thread. */
-                /* todo close thread handle. */
+                /* [todo] wait for thread. */
+                WaitForSingleObject(ThreadPool->ThreadHandles[i], INFINITE);
+
+                /* [todo] close thread handle. */
+                CloseHandle(ThreadPool->ThreadHandles[i]);
             }
         }
         free(ThreadPool->ThreadHandles);
@@ -247,7 +265,25 @@ TpUninit(
     ThreadPool->ThreadHandles = NULL;
     ThreadPool->NumberOfThreads = 0;
 
-    /* todo: empty the work queue and process the rest of the work items take care of synchronization! */
+    /* [todo]: empty the work queue and process the rest of the work items take care of synchronization! */
+    while (TRUE) {
+        LIST_ENTRY* listTail = NULL;
+        MY_WORK_ITEM* workItem = NULL;
+        
+        AcquireSRWLockExclusive(&ThreadPool->QueueLock);
+        listTail = ListRemoveTail(&ThreadPool->Queue);
+        ReleaseSRWLockExclusive(&ThreadPool->QueueLock);
+
+        if (NULL == listTail)
+            break;
+
+        workItem = CONTAINING_RECORD(listTail, MY_WORK_ITEM, ListEntry);
+        if (workItem) {
+            workItem->WorkRoutine(workItem->Context);
+        }
+        free(workItem);
+        //workItem = NULL;
+    }
 
     /* And close the event handles. */
     if (NULL != ThreadPool->StopThreadPoolEvent)
@@ -319,12 +355,24 @@ TpInit(
     /* And finally create the actual threads - they will start executing TpRoutine. */
     for (UINT32 i = 0; i < NumberOfThreads; ++i)
     {
-        /* todo: create a single thread with TpRoutine as work and pass ThreadPool as context. */
+        /* [todo]: create a single thread with TpRoutine as work and pass ThreadPool as context. */
+        ThreadPool->ThreadHandles[i] = CreateThread(
+            NULL,
+            0,
+            TpRoutine,
+            ThreadPool,
+            0,
+            NULL
+        );
+
         if (NULL == ThreadPool->ThreadHandles[i])
         {
             status = STATUS_INVALID_HANDLE;
             goto CleanUp;
         }
+
+        printf("Thread[%d] created successfully!\r\n", i);
+
         /* We created one more thread successfully. */
         ThreadPool->NumberOfThreads++;
     }
@@ -360,9 +408,23 @@ TpEnqueueWorkItem(
     item->Context = Context;
     item->WorkRoutine = WorkRoutine;
 
-    /* todo Insert into threadpool. This must be done with lock taken. */
+    /* [todo] Insert into threadpool. This must be done with lock taken. */
+    ListInsertHead(&ThreadPool->Queue, &item->ListEntry);
 
-    /* todo Notify thread pool WorkScheduledEvent that a new item is available. */
+    /* [todo] Notify thread pool WorkScheduledEvent that a new item is available. */
+    ThreadPool->WorkScheduledEvent = CreateEventW(
+        NULL,
+        FALSE,
+        TRUE, // initial state = signaled
+        NULL // No event name provided (maybe in future work)
+    );
+
+    // Check for validity
+    if (!ThreadPool->WorkScheduledEvent) {
+        free(item);
+        //item = NULL; // Dezaloc corect? INVESTIGATE!
+        return STATUS_UNSUCCESSFUL;
+    }
 
     /* All good. */
     return STATUS_SUCCESS;
@@ -401,7 +463,7 @@ TestThreadPoolRoutine(
     return STATUS_SUCCESS;
 }
 
-int main1()
+int startJob()
 {
     MY_THREAD_POOL tp = { 0 };
     MY_CONTEXT ctx = { 0 };
