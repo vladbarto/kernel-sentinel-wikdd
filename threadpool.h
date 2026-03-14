@@ -1,14 +1,4 @@
-#define _CRTDBG_MAP_ALLOC
-
-#define WIN32_NO_STATUS
-#include <Windows.h>
-#include <winternl.h>
-#include <intsafe.h>
-#undef WIN32_NO_STATUS
-#include <ntstatus.h>
-
-#include <stdio.h>
-#include <assert.h>
-#include <crtdbg.h>
+#pragma once
+#include "common_includer.h"
 
 int startJob();

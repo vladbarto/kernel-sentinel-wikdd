@@ -1,8 +1,10 @@
 // kernel-sentinel.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
+#include "common_includer.h"
 #include "threadpool.h"
 #include "console-gui.h"
+#include "kernel-sentinel.tmh"
 
 int main()
 {
