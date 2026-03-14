@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef _TRACE_H_
 #define _TRACE_H_
 //
@@ -10,7 +12,7 @@
 
 #define WPP_CONTROL_GUIDS \
  WPP_DEFINE_CONTROL_GUID ( \
-	 MyDriverTraceGuid, (bb6301c6-4e62-4bbf-b869-33b533287481), \
+	 MyDriverTraceGuid, (bb6301c6,4e62,4bbf,b869,33b533287481), \
 	 WPP_DEFINE_BIT(TRACE_FLAG_DRIVER) /* bit 0 = 0x00000001 */ \
 	 WPP_DEFINE_BIT(TRACE_FLAG_FILE_FILTER) /* bit 1 = 0x00000002 */ \
 )
