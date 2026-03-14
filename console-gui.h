@@ -5,4 +5,5 @@
 void renderGui();
 void help();
 void start();
+void listProcesses();
 void exit();
