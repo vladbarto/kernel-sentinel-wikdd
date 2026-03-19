@@ -2,7 +2,7 @@
 #include "common_includer.h"
 #include <tchar.h>
 #include <psapi.h>
-//#include <winternl.h>
+#include <winternl.h>
 
 typedef struct _MY_PROCESS_BASIC_INFORMATION {
 	NTSTATUS ExitStatus;
