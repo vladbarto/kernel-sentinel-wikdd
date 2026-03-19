@@ -128,12 +128,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="console-gui.cpp" />
+    <ClCompile Include="dynamic-load-library.cpp" />
     <ClCompile Include="kernel-sentinel.cpp" />
+    <ClCompile Include="process-listing.cpp" />
     <ClCompile Include="threadpool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_includer.h" />
     <ClInclude Include="console-gui.h" />
+    <ClInclude Include="dynamic-load-library.h" />
+    <ClInclude Include="process-listing.h" />
     <ClInclude Include="threadpool.h" />
     <ClInclude Include="trace.h" />
   </ItemGroup>

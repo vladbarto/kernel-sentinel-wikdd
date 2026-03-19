@@ -5,11 +5,10 @@
 #include "threadpool.h"
 #include "console-gui.h"
 #include "kernel-sentinel.tmh"
+#include "process-listing.h"
 
 int main()
 {
-    //main1();
-
     while (true) {
         renderGui();
         char command = 0;
@@ -28,12 +27,15 @@ int main()
                 break;
             }
             case '3': {
+                listAllRunningProcessesOnSystem();
+                break;
+            }
+            case '4': {
                 exit();
                 return 0;
             }
             default: ;
         }
-        
     }
 
     return 0;
