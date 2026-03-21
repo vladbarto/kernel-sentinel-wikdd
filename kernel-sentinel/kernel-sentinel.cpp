@@ -54,6 +54,17 @@ int main()
                     printf("Request resolution: Fail");
                 break;
             }
+            case '6': {
+                IoctlDriver_2();
+                char charArg[2] = "3";
+                PCHAR* arg = (PCHAR*)malloc(sizeof(PCHAR) * 1);
+                arg[0] = charArg;
+
+                ULONG success = UserModeDriverCaller(1, arg);
+                if (-1 == success)
+                    printf("Request resolution: Fail");
+                break;
+            }
             default: 
                 exit();
                 return 0;

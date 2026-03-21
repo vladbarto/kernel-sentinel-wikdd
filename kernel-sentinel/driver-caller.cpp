@@ -11,6 +11,8 @@ CtlCodeDecider(PCHAR argv[]) {
 		return (DWORD)IOCTL_SIOCTL_METHOD_BUFFERED;
 	if (argv[0][0] == '2' && argv[0][1] == 0)
 		return (DWORD)IOCTL_SIOCTL_METHOD_BUFFERED_2;
+	if (argv[0][0] == '3' && argv[0][1] == 0)
+		return (DWORD)IOCTL_SIOCTL_METHOD_BUFFERED_DRIVER_2;
 	return IOCTL_NONE;
 }
 
@@ -23,7 +25,7 @@ UserModeDriverCaller(
 	argv;
 
 	if (argc != 1) {
-		return Error("Wrong NUMBER of arguments provided. Required: 1 argument (value = 1 | 2)\r\n");
+		return Error("Wrong NUMBER of arguments provided. Required: 1 argument (value = 1 | 2 | 3)\r\n");
 	}
 
 	printf("%s\r\n", argv[0]);
@@ -62,7 +64,11 @@ UserModeDriverCaller(
 	);
 
 	if (CtlCodeUsed == IOCTL_SIOCTL_METHOD_BUFFERED_2){
-		StringCchCatA(InputBuffer, sizeof(InputBuffer), "2");
+		StringCchCatA(InputBuffer, sizeof(InputBuffer), "_2");
+	}
+
+	if (CtlCodeUsed == IOCTL_SIOCTL_METHOD_BUFFERED_2) {
+		StringCchCatA(InputBuffer, sizeof(InputBuffer), "_DRIVER_2");
 	}
 
 	BOOL bSuccess = DeviceIoControl(

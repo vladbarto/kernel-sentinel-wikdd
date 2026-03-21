@@ -10,6 +10,7 @@ void renderGui() {
 	printf("\t 3. list processes\n");
 	printf("\t 4. call first IOCTL\n");
 	printf("\t 5. call second IOCTL\n");
+	printf("\t 6. call Driver_2 for level 2\n");
 	printf("\t Any key. exit\n");
 
 	printf("To execute a command type its corresponding number.\n");
@@ -39,6 +40,10 @@ void firstIoctl() {
 
 void secondIoctl() {
 	printf("[call second IOCTL]\r\n");
+}
+
+void IoctlDriver_2() {
+	printf("[call Driver_2]\r\n");
 }
 
 void exit() {
