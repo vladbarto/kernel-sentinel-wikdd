@@ -24,6 +24,15 @@
     <ClCompile Include="console-gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dynamic-load-library.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="process-listing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="driver-caller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="threadpool.h">
@@ -36,6 +45,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common_includer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dynamic-load-library.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="process-listing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="driver-caller.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -15,4 +15,10 @@
 #include <crtdbg.h>
 #include <stdlib.h>
 
+#include <windows.h>
+#include <winioctl.h>
+#include <stdio.h>
+#include <string.h>
+#include <strsafe.h>
+
 //#include "dynamic-load-library.h"

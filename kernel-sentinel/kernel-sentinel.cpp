@@ -6,6 +6,7 @@
 #include "console-gui.h"
 #include "kernel-sentinel.tmh"
 #include "process-listing.h"
+#include "driver-caller.h"
 
 int main()
 {
@@ -27,14 +28,35 @@ int main()
                 break;
             }
             case '3': {
+                listProcessesUM();
                 listAllRunningProcessesOnSystem();
                 break;
             }
             case '4': {
+                firstIoctl();
+                char charArg[2] = "1";
+                PCHAR* arg = (PCHAR*)malloc(sizeof(PCHAR) * 1);
+                arg[0] = charArg;
+
+                ULONG success = UserModeDriverCaller(1, arg);
+                if (-1 == success)
+                    printf("Request resolution: Fail");
+                break;
+            }
+            case '5': {
+                secondIoctl();
+                char charArg[2] = "2";
+                PCHAR* arg = (PCHAR*) malloc(sizeof(PCHAR) * 1);
+                arg[0] = charArg;
+
+                ULONG success = UserModeDriverCaller(1, arg);
+                if (-1 == success)
+                    printf("Request resolution: Fail");
+                break;
+            }
+            default: 
                 exit();
                 return 0;
-            }
-            default: ;
         }
     }
 
