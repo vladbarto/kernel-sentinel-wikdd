@@ -30,7 +30,7 @@ MyCreateClose(
 }
 
 NTSTATUS
-MyCreateDeviceControl(
+MyCreateDeviceControl(                      // This is Driver_1  
     _In_ PDEVICE_OBJECT DeviceObject,
     _In_ PIRP Irp
 ) {
@@ -93,13 +93,47 @@ MyCreateDeviceControl(
             break;
     }
     
+    Irp->IoStatus.Status = STATUS_SUCCESS; // failing ntStatus should not be overriden at the end with success
 End:
-    Irp->IoStatus.Status = STATUS_SUCCESS;
     Irp->IoStatus.Information = 0;
 
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
-    return STATUS_SUCCESS;
+    return Irp->IoStatus.Status;
+}
+
+
+NTSTATUS
+Driver_2(
+    _In_ PDEVICE_OBJECT DeviceObject,
+    _In_ PIRP Irp
+) {
+    DeviceObject;
+
+    PIO_STACK_LOCATION  irpSp = { 0 };              // Pointer to current stack location
+    NTSTATUS            ntStatus = STATUS_SUCCESS;  // Assume success
+    ULONG               inBufLength = 0;            // Input buffer length
+    ULONG               outBufLength = 0;           // Output buffer length
+
+    __debugbreak();
+
+    DbgPrintEx(
+        DPFLTR_IHVDRIVER_ID,
+        DPFLTR_ERROR_LEVEL,
+        "[Level 2] Hello from My Driver_2\r\n"
+    );
+
+    irpSp = IoGetCurrentIrpStackLocation(Irp);
+    inBufLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
+    outBufLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+
+    if (!inBufLength || !outBufLength) {
+        ntStatus = STATUS_INVALID_PARAMETER;
+        goto End;
+    }
+
+End:
+    return ntStatus;
 }
 
 // -------------- Driver LOAD & UNLOAD ---------------------------------------------------------------------
@@ -190,5 +224,5 @@ DriverEntry(
         IoDeleteDevice(deviceObject);
     }
 
-    return STATUS_SUCCESS;
+    return ntStatus;
 }
