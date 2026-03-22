@@ -67,7 +67,7 @@ UserModeDriverCaller(
 		StringCchCatA(InputBuffer, sizeof(InputBuffer), "_2");
 	}
 
-	if (CtlCodeUsed == IOCTL_SIOCTL_METHOD_BUFFERED_2) {
+	if (CtlCodeUsed == IOCTL_SIOCTL_METHOD_BUFFERED_DRIVER_2) {
 		StringCchCatA(InputBuffer, sizeof(InputBuffer), "_DRIVER_2");
 	}
 

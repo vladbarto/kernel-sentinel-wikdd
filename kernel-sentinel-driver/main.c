@@ -4,6 +4,8 @@
 #define NT_DEVICE_NAME      L"\\Device\\SIOCTL"
 #define DOS_DEVICE_NAME     L"\\GLOBAL??\\kernel-sentinel-driver"
 
+#define NT_DEVICE_NAME_DRIVER_2 L"\\Device\\MYDRV2"
+
 // -------------- Driver Create / Close, Create Device Control definitions ----------------------------------
 NTSTATUS
 MyCreateClose(
@@ -30,7 +32,7 @@ MyCreateClose(
 }
 
 NTSTATUS
-MyCreateDeviceControl(                      // This is Driver_1  
+MyCreateDeviceControl(                      // This is Driver_1 and at the same time a Dispatcher Driver  
     _In_ PDEVICE_OBJECT DeviceObject,
     _In_ PIRP Irp
 ) {
@@ -49,9 +51,12 @@ MyCreateDeviceControl(                      // This is Driver_1
         "Hello from MyCreateDeviceControl\r\n"
     );
 
+    Irp->StackCount = 2; // 2 drivers, 2 stacks
+
     irpSp           = IoGetCurrentIrpStackLocation(Irp);
     inBufLength     = irpSp->Parameters.DeviceIoControl.InputBufferLength;
     outBufLength    = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
+    
 
     if (!inBufLength || !outBufLength) {
         ntStatus = STATUS_INVALID_PARAMETER;
@@ -78,7 +83,7 @@ MyCreateDeviceControl(                      // This is Driver_1
             DbgPrintEx(
                 DPFLTR_IHVDRIVER_ID,
                 DPFLTR_ERROR_LEVEL,
-                "[Called IOCTL_SIOCTL_METHOD_BUFFERED]\r\nSecond IOCTL was called\r\n"
+                "[Called IOCTL_SIOCTL_METHOD_BUFFERED_2]\r\nSecond IOCTL was called\r\n"
             );
 
             DbgPrintEx(
@@ -87,6 +92,53 @@ MyCreateDeviceControl(                      // This is Driver_1
                 "Received: %s\r\n",
                 (char*)Irp->AssociatedIrp.SystemBuffer
             );
+
+            break;
+        case IOCTL_SIOCTL_METHOD_BUFFERED_DRIVER_2:
+            DbgPrintEx(
+                DPFLTR_IHVDRIVER_ID,
+                DPFLTR_ERROR_LEVEL,
+                "[Called IOCTL_SIOCTL_METHOD_BUFFERED_DRIVER_2]\r\nThird (driver 2) IOCTL was called\r\n"
+            );
+
+            DbgPrintEx(
+                DPFLTR_IHVDRIVER_ID,
+                DPFLTR_ERROR_LEVEL,
+                "Received: %s\r\n",
+                (char*)Irp->AssociatedIrp.SystemBuffer
+            );
+
+            __debugbreak();
+            // Get address of another driver's device object
+            PFILE_OBJECT FileObject2     = { 0 };
+            PDEVICE_OBJECT DeviceObject2 = { 0 };
+            UNICODE_STRING ntDeviceName2 = { 0 };
+            RtlInitUnicodeString(
+                &ntDeviceName2,
+                NT_DEVICE_NAME_DRIVER_2
+            );
+
+            ntStatus = IoGetDeviceObjectPointer(
+                &ntDeviceName2,
+                FILE_ALL_ACCESS,
+                &FileObject2,
+                &DeviceObject2
+            );
+
+            if (ntStatus != STATUS_SUCCESS) {
+                goto End;
+            }
+
+            // Before passing the request copy the data to the next driver
+            IoCopyCurrentIrpStackLocationToNext(Irp);
+
+            __debugbreak();
+            // Pass request to driver 2
+            IoSetNextIrpStackLocation(Irp); // irp stack pointer += 1, so to speak
+            IoCallDriver(DeviceObject2, Irp);
+
+            __debugbreak();
+            ObDereferenceObject(DeviceObject2);
 
             break;
         default:
@@ -104,7 +156,7 @@ End:
 
 
 NTSTATUS
-Driver_2(
+Driver_2_Control(
     _In_ PDEVICE_OBJECT DeviceObject,
     _In_ PIRP Irp
 ) {
@@ -115,13 +167,13 @@ Driver_2(
     ULONG               inBufLength = 0;            // Input buffer length
     ULONG               outBufLength = 0;           // Output buffer length
 
-    __debugbreak();
-
     DbgPrintEx(
         DPFLTR_IHVDRIVER_ID,
         DPFLTR_ERROR_LEVEL,
-        "[Level 2] Hello from My Driver_2\r\n"
+        "[Level 2] Hello from My Driver_2. NOOT NOOT!\r\n"
     );
+
+    __debugbreak();
 
     irpSp = IoGetCurrentIrpStackLocation(Irp);
     inBufLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
@@ -222,6 +274,60 @@ DriverEntry(
             "Couldn't create the symlink\r\n"
         );
         IoDeleteDevice(deviceObject);
+    }
+
+    return ntStatus;
+}
+
+Driver_2_Entry(
+    _In_ PDRIVER_OBJECT DriverObject,
+    _In_ PUNICODE_STRING RegistryPath
+)
+{
+    DriverObject;
+    RegistryPath;
+
+    NTSTATUS ntStatus           = STATUS_UNSUCCESSFUL;
+    UNICODE_STRING ntDeviceName = { 0 };
+    PDEVICE_OBJECT deviceObject = NULL;
+
+    DbgPrintEx(
+        DPFLTR_IHVDRIVER_ID,
+        DPFLTR_ERROR_LEVEL,
+        "Hello from driver load %d\r\n",
+        100
+    );
+    __debugbreak();
+
+    DriverObject->DriverUnload = DriverUnload;
+
+    DriverObject->MajorFunction[IRP_MJ_CREATE] = MyCreateClose;
+    DriverObject->MajorFunction[IRP_MJ_CLOSE] = MyCreateClose;
+    DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = Driver_2_Control;
+    DriverObject->DriverUnload = DriverUnload;
+
+    RtlInitUnicodeString(
+        &ntDeviceName,
+        NT_DEVICE_NAME_DRIVER_2
+    );
+
+    ntStatus = IoCreateDevice(
+        DriverObject,               // Our Driver Object
+        0,                          // We don't use a device extension
+        &ntDeviceName,              // Device name "\Device\MYDRV2"
+        FILE_DEVICE_UNKNOWN,        // Device type
+        FILE_DEVICE_SECURE_OPEN,    // Device characteristics
+        FALSE,                      // Not an exclusive device
+        &deviceObject               // Returned ptr to Device Object
+    );
+
+    if (!NT_SUCCESS(ntStatus)) {
+        DbgPrintEx(
+            DPFLTR_IHVDRIVER_ID,
+            DPFLTR_ERROR_LEVEL,
+            "Couldn't create the device object\r\n"
+        );
+        return ntStatus;
     }
 
     return ntStatus;
