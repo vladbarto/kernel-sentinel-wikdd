@@ -173,6 +173,40 @@ MyCreateDeviceControl(                      // This is Driver_1 and at the same 
                 goto End;
             }
             break;
+        case IOCTL_SIOCTL_METHOD_BUFFERED_TP_TEST:
+        {
+            MY_THREAD_POOL tp = { 0 };
+            MY_CONTEXT ctx = { 0 };
+            NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+            status = TpInit(&tp, 5);
+            if (!NT_SUCCESS(status))
+            {
+                goto End;
+            }
+
+            KeInitializeSpinLock(&ctx.SpinLock);
+            ctx.Number = 0;
+
+            for (int i = 0; i < 100000; ++i)
+            {
+                status = TpEnqueueWorkItem(&tp, MyWorkItemRoutine, &ctx);
+                if (!NT_SUCCESS(status))
+                {
+                    goto End;
+                }
+            }
+
+            status = TpUninitialize(&tp);
+
+            /* If everything went well, this should output 100000000. */
+            printf("Final number value = %d \r\n", ctx.Number);
+
+            if (!NT_STATUS(status)) {
+                goto End;
+            }
+            break;
+        }
         default:
             break;
     }
