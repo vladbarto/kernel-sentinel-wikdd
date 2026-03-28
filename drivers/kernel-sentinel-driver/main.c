@@ -155,39 +155,6 @@ End:
 }
 
 
-NTSTATUS
-Driver_2_Control(
-    _In_ PDEVICE_OBJECT DeviceObject,
-    _In_ PIRP Irp
-) {
-    DeviceObject;
-
-    PIO_STACK_LOCATION  irpSp = { 0 };              // Pointer to current stack location
-    NTSTATUS            ntStatus = STATUS_SUCCESS;  // Assume success
-    ULONG               inBufLength = 0;            // Input buffer length
-    ULONG               outBufLength = 0;           // Output buffer length
-
-    DbgPrintEx(
-        DPFLTR_IHVDRIVER_ID,
-        DPFLTR_ERROR_LEVEL,
-        "[Level 2] Hello from My Driver_2. NOOT NOOT!\r\n"
-    );
-
-    __debugbreak();
-
-    irpSp = IoGetCurrentIrpStackLocation(Irp);
-    inBufLength = irpSp->Parameters.DeviceIoControl.InputBufferLength;
-    outBufLength = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
-
-    if (!inBufLength || !outBufLength) {
-        ntStatus = STATUS_INVALID_PARAMETER;
-        goto End;
-    }
-
-End:
-    return ntStatus;
-}
-
 // -------------- Driver LOAD & UNLOAD ---------------------------------------------------------------------
 VOID 
 DriverUnload(
@@ -274,60 +241,6 @@ DriverEntry(
             "Couldn't create the symlink\r\n"
         );
         IoDeleteDevice(deviceObject);
-    }
-
-    return ntStatus;
-}
-
-Driver_2_Entry(
-    _In_ PDRIVER_OBJECT DriverObject,
-    _In_ PUNICODE_STRING RegistryPath
-)
-{
-    DriverObject;
-    RegistryPath;
-
-    NTSTATUS ntStatus           = STATUS_UNSUCCESSFUL;
-    UNICODE_STRING ntDeviceName = { 0 };
-    PDEVICE_OBJECT deviceObject = NULL;
-
-    DbgPrintEx(
-        DPFLTR_IHVDRIVER_ID,
-        DPFLTR_ERROR_LEVEL,
-        "Hello from driver load %d\r\n",
-        100
-    );
-    __debugbreak();
-
-    DriverObject->DriverUnload = DriverUnload;
-
-    DriverObject->MajorFunction[IRP_MJ_CREATE] = MyCreateClose;
-    DriverObject->MajorFunction[IRP_MJ_CLOSE] = MyCreateClose;
-    DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = Driver_2_Control;
-    DriverObject->DriverUnload = DriverUnload;
-
-    RtlInitUnicodeString(
-        &ntDeviceName,
-        NT_DEVICE_NAME_DRIVER_2
-    );
-
-    ntStatus = IoCreateDevice(
-        DriverObject,               // Our Driver Object
-        0,                          // We don't use a device extension
-        &ntDeviceName,              // Device name "\Device\MYDRV2"
-        FILE_DEVICE_UNKNOWN,        // Device type
-        FILE_DEVICE_SECURE_OPEN,    // Device characteristics
-        FALSE,                      // Not an exclusive device
-        &deviceObject               // Returned ptr to Device Object
-    );
-
-    if (!NT_SUCCESS(ntStatus)) {
-        DbgPrintEx(
-            DPFLTR_IHVDRIVER_ID,
-            DPFLTR_ERROR_LEVEL,
-            "Couldn't create the device object\r\n"
-        );
-        return ntStatus;
     }
 
     return ntStatus;
