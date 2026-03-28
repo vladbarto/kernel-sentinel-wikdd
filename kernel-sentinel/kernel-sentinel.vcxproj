@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="console-gui.cpp" />
+    <ClCompile Include="driver-caller.cpp" />
     <ClCompile Include="dynamic-load-library.cpp" />
     <ClCompile Include="kernel-sentinel.cpp" />
     <ClCompile Include="process-listing.cpp" />
@@ -136,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="common_includer.h" />
     <ClInclude Include="console-gui.h" />
+    <ClInclude Include="driver-caller.h" />
     <ClInclude Include="dynamic-load-library.h" />
     <ClInclude Include="process-listing.h" />
     <ClInclude Include="threadpool.h" />

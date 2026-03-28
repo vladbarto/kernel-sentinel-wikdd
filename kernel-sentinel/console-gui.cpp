@@ -8,7 +8,10 @@ void renderGui() {
 	printf("\t 1. help\n");
 	printf("\t 2. start\n");
 	printf("\t 3. list processes\n");
-	printf("\t 4. exit\n");
+	printf("\t 4. call first IOCTL\n");
+	printf("\t 5. call second IOCTL\n");
+	printf("\t 6. call Driver_2 for level 2\n");
+	printf("\t Any key. exit\n");
 
 	printf("To execute a command type its corresponding number.\n");
 	printf("Input: ");
@@ -26,9 +29,21 @@ void start() {
 	printf("This is the starting point of threadpool of Kernel Sentinel.\n");
 }
 
-void listProcesses() {
+void listProcessesUM() {
 	printf("[list processes]\r\n");
 	printf("This feature lists all the processes at the time of querying.\n");
+}
+
+void firstIoctl() {
+	printf("[call first IOCTL]\r\n");
+}
+
+void secondIoctl() {
+	printf("[call second IOCTL]\r\n");
+}
+
+void IoctlDriver_2() {
+	printf("[call Driver_2]\r\n");
 }
 
 void exit() {
