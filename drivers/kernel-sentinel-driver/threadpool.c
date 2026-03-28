@@ -77,11 +77,8 @@ TpWorkerThread(
 
         while (shouldWork)
         {
-            KeWaitForSingleObject(&threadPool->ListMutex,
-                Executive,
-                KernelMode,
-                FALSE,
-                NULL);
+            KIRQL OldIrql = KeGetCurrentIrql();
+            KeAcquireSpinLock(&threadPool->ListSpinLock, &OldIrql);
             if (!IsListEmpty(&threadPool->ListHead))
             {
                 LIST_ENTRY* entry = RemoveTailList(&threadPool->ListHead);
@@ -94,7 +91,7 @@ TpWorkerThread(
             {
                 shouldWork = FALSE;
             }
-            KeReleaseMutex(&threadPool->ListMutex, FALSE);
+            KeReleaseSpinLock(&threadPool->ListSpinLock, OldIrql);
         }
     }
 }
@@ -159,7 +156,7 @@ TpInit(
     // Initialize the work item list
     //
     InitializeListHead(&ThreadPool->ListHead);
-    KeInitializeMutex(&ThreadPool->ListMutex, 0);
+    KeInitializeSpinLock(&ThreadPool->ListSpinLock);
 
     //
     // Initialize the events
@@ -235,9 +232,10 @@ TpEnqueueWorkItem(
     workItem->Context = Context;
 
     // Insert the work item in the list
-    KeWaitForSingleObject(&ThreadPool->ListMutex, Executive, KernelMode, FALSE, NULL);
+    KIRQL OldIrql = KeGetCurrentIrql();
+    KeAcquireSpinLock(&ThreadPool->ListSpinLock, &OldIrql);
     InsertHeadList(&ThreadPool->ListHead, &workItem->ListEntry);
-    KeReleaseMutex(&ThreadPool->ListMutex, FALSE);
+    KeReleaseSpinLock(&ThreadPool->ListSpinLock, OldIrql);
 
     // Signal the work scheduled event
     KeSetEvent(&ThreadPool->WorkScheduled, 0, FALSE);

@@ -10,8 +10,7 @@ typedef struct _MY_THREAD_POOL
     KEVENT     WorkScheduled;   // This event is used to signal that the threads have work to perform.
     UINT32     NumberOfThreads; // Number of threads in threadpool.
     HANDLE* ThreadHandles;   // Handle to the actual threads.
-    KMUTEX     ListMutex;       // We use KMUTEX to protect the list of work items
-    // See https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/introduction-to-mutex-objects
+    KSPIN_LOCK     ListSpinLock;       // We use KSPIN_LOCK to protect the list of work items
     LIST_ENTRY ListHead;        // The work items pended.
     // See https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/singly-and-doubly-linked-lists#doubly-linked-lists
 }MY_THREAD_POOL, * PMY_THREAD_POOL;
