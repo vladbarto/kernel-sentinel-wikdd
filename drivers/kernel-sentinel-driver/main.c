@@ -1,5 +1,6 @@
-#include <ntddk.h>
 #include "ioctl_codes.h"
+#include "include\threadpool.h"
+#include "include\shared.h"
 
 #define NT_DEVICE_NAME      L"\\Device\\SIOCTL"
 #define DOS_DEVICE_NAME     L"\\GLOBAL??\\kernel-sentinel-driver"
@@ -57,11 +58,23 @@ MyCreateDeviceControl(                      // This is Driver_1 and at the same 
     inBufLength     = irpSp->Parameters.DeviceIoControl.InputBufferLength;
     outBufLength    = irpSp->Parameters.DeviceIoControl.OutputBufferLength;
     
-
     if (!inBufLength || !outBufLength) {
         ntStatus = STATUS_INVALID_PARAMETER;
         goto End;
     }
+
+    PDRIVER_INPUT_UM input = (PDRIVER_INPUT_UM) Irp->AssociatedIrp.SystemBuffer;
+
+    if (inBufLength < sizeof(DRIVER_INPUT_UM)) {
+        Irp->IoStatus.Status = STATUS_BUFFER_TOO_SMALL;
+        Irp->IoStatus.Information = 0;
+        IoCompleteRequest(Irp, IO_NO_INCREMENT);
+        return STATUS_BUFFER_TOO_SMALL;
+    }
+
+    MY_THREAD_POOL tp = { 0 };
+    UINT32 numberOfThreads = input->NumberOfThreads;
+    PMY_CONTEXT ctx = { 0 };
 
     switch (irpSp->Parameters.DeviceIoControl.IoControlCode) {
         case IOCTL_SIOCTL_METHOD_BUFFERED:
@@ -141,6 +154,25 @@ MyCreateDeviceControl(                      // This is Driver_1 and at the same 
             ObDereferenceObject(DeviceObject2);
 
             break;
+        case IOCTL_SIOCTL_METHOD_BUFFERED_TP_INIT:
+            ntStatus = TpInit(&tp, numberOfThreads);
+            if (!NT_SUCCESS(ntStatus)) {
+                goto End;
+            }
+            break;
+        case IOCTL_SIOCTL_METHOD_BUFFERED_TP_SUBMIT_WORK_ITEM:
+            KeInitializeSpinLock(&ctx->SpinLock);
+            ntStatus = TpEnqueueWorkItem(&tp, MyWorkItemRoutine, ctx);
+            if (!NT_SUCCESS(ntStatus)) {
+                goto End;
+            }
+            break;
+        case IOCTL_SIOCTL_METHOD_BUFFERED_TP_UNLOAD:
+            ntStatus = TpUninitialize(&tp);
+            if (!NT_SUCCESS(ntStatus)) {
+                goto End;
+            }
+            break;
         default:
             break;
     }
@@ -149,6 +181,7 @@ MyCreateDeviceControl(                      // This is Driver_1 and at the same 
 End:
     Irp->IoStatus.Information = 0;
 
+    //TpUninitialize(&tp);DOESN'T WORK; I risk leaks but At least works // disregard the status, close the TP either way (corner case: tp_init is called, but not tp_unload as well)
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
     return Irp->IoStatus.Status;
@@ -177,7 +210,6 @@ DriverEntry(
     _In_ PUNICODE_STRING RegistryPath
 )
 {
-    DriverObject;
     RegistryPath;
 
     NTSTATUS ntStatus = STATUS_UNSUCCESSFUL;
