@@ -65,6 +65,51 @@ int main()
                     printf("Request resolution: Fail");
                 break;
             }
+            case '7': {
+                ThreadpoolInit();
+                char charArg[2] = "4";
+                PCHAR* arg = (PCHAR*)malloc(sizeof(PCHAR) * 2);
+                arg[0] = charArg;
+                printf("Number of threads: ");
+                if (!scanf_s(" %9s", arg[1], 10))
+                {
+                    printf("Error while reading nr of threads!");
+                    __debugbreak();
+                    free(arg);
+                    free(arg);
+                    return -1;
+                }
+                __debugbreak();
+                printf("Number of threads desired = %s\r\n", arg[1]);
+                ULONG success = UserModeDriverCaller(2, arg);
+                if (-1 == success)
+                    printf("Request resolution: Fail");
+                free(arg);
+                free(arg);
+                break;
+            }
+            case '8': {
+                ThreadpoolSubmitWorkItem();
+                char charArg[2] = "5";
+                PCHAR* arg = (PCHAR*)malloc(sizeof(PCHAR) * 1);
+                arg[0] = charArg;
+
+                ULONG success = UserModeDriverCaller(1, arg);
+                if (-1 == success)
+                    printf("Request resolution: Fail");
+                break;
+            }
+            case '9': {
+                ThreadpoolUninit();
+                char charArg[2] = "6";
+                PCHAR* arg = (PCHAR*)malloc(sizeof(PCHAR) * 1);
+                arg[0] = charArg;
+
+                ULONG success = UserModeDriverCaller(1, arg);
+                if (-1 == success)
+                    printf("Request resolution: Fail");
+                break;
+            }
             default: 
                 exit();
                 return 0;

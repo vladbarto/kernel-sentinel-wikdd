@@ -11,6 +11,10 @@ void renderGui() {
 	printf("\t 4. call first IOCTL\n");
 	printf("\t 5. call second IOCTL\n");
 	printf("\t 6. call Driver_2 for level 2\n");
+	printf("\t 7. call TP Initializer\n");
+	printf("\t 8. call TP Work Item submission\n");
+	printf("\t 9. call TP stopper & unloader\n");
+
 	printf("\t Any key. exit\n");
 
 	printf("To execute a command type its corresponding number.\n");
@@ -44,6 +48,18 @@ void secondIoctl() {
 
 void IoctlDriver_2() {
 	printf("[call Driver_2]\r\n");
+}
+
+void ThreadpoolInit() {
+	printf("[call Threadpool Init in ThreadpoolDriver]\r\n");
+}
+
+void ThreadpoolUninit() {
+	printf("[call Threadpool Stop & Unload in ThreadpoolDriver]\r\n");
+}
+
+void ThreadpoolSubmitWorkItem() {
+	printf("[call Threadpool Submit Work Item in ThreadpoolDriver]\r\n");
 }
 
 void exit() {
