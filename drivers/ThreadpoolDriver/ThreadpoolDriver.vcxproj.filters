@@ -20,26 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
-      <Filter>Driver Files</Filter>
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="threadpool.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="communication.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ioctl_codes.h">
-      <Filter>Driver Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\threadpool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="communication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\shared.h">
+    <ClInclude Include="threadpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
