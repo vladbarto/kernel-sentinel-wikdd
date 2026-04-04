@@ -1,5 +1,8 @@
 #pragma once
 #include <ntifs.h>
+#include "..\..\kernel-sentinel\trace.h"
+
+#define TAG_UCH 'HCU@'
 
 typedef struct _DRIVER_INPUT_UM {
 	char InputBuffer[100];

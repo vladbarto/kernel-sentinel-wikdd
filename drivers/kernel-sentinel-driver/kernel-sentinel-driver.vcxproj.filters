@@ -25,7 +25,7 @@
     <ClCompile Include="threadpool.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="communication.c">
+    <ClCompile Include="notification.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -36,7 +36,7 @@
     <ClInclude Include="include\threadpool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="communication.h">
+    <ClInclude Include="include\notification.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\shared.h">

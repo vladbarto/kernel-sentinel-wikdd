@@ -2,6 +2,7 @@
 //   Copyright (C) 2019-2026 BitDefender S.R.L.
 //   Author(s)    : Andrei-Marius MUNTEA(amuntea@bitdefender.com)
 //                : Radu PORTASE(rportase@bitdefender.com)
+//                : Vlad-Alexandru BARTOLOMEI (vlad.bartolomei@outlook.com)
 //
 
 #include "include\threadpool.h"
