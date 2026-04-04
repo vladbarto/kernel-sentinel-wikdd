@@ -13,7 +13,7 @@ PFUNC_ZwQueryInformationProcess pfnZwQueryInformationProcess = NULL;
 OB_CALLBACK_REGISTRATION    gCallbackRegistration;
 PVOID                       gRegistrationHandle = NULL;
 UNICODE_STRING              gRegAltitude = RTL_CONSTANT_STRING(L"389022.1"); // over bdprivmon.sys | Bitdefender SRL :)
-PLARGE_INTEGER              gRegistryCookie = { 0 };
+LARGE_INTEGER               gRegistryCookie = { 0 };
 
 NTSTATUS
 GetImagePathFromOpenHandle(
@@ -37,7 +37,7 @@ GetImagePathFromOpenHandle(
         }
 
         // allocate required space
-        pProcessPath = (PUNICODE_STRING)ExAllocatePool2(NonPagedPool, dwObjectNameSize, TAG_UCH);
+        pProcessPath = (PUNICODE_STRING)ExAllocatePoolWithTag(NonPagedPool, dwObjectNameSize, TAG_UCH);
         
         if (!pProcessPath)
         {
@@ -158,7 +158,7 @@ PrintKeyPath(
     }
 
     ntStatus = CmCallbackGetKeyObjectIDEx(
-        gRegistryCookie,
+        &gRegistryCookie,
         KeyObject,
         &objectId,
         &keyPath,
@@ -166,6 +166,12 @@ PrintKeyPath(
     );
 
     if (NT_SUCCESS(ntStatus) && keyPath != NULL) {
+        DbgPrintEx(
+            DPFLTR_IHVDRIVER_ID,
+            DPFLTR_ERROR_LEVEL,
+            "   Old Name: %wZ\r\n",
+            keyPath
+        );
         DrvLogInfo("   Old Name: %wZ\r\n", keyPath);
         CmCallbackReleaseKeyObjectIDEx(keyPath);
     }
@@ -268,6 +274,12 @@ CmRegistryCallback(
         DrvLogInfo(">>> RegNtPreRenameKey\r\n");
         PrintKeyPath(info->Object);
         DrvLogInfo("    New Name: %wZ\r\n", info->NewName);
+        DbgPrintEx(
+            DPFLTR_IHVDRIVER_ID,
+            DPFLTR_ERROR_LEVEL,
+            "    New Name: %wZ\r\n",
+            info->NewName
+        );
         break;
     }
     case RegNtPostRenameKey:
@@ -276,6 +288,11 @@ CmRegistryCallback(
         NTSTATUS opStatus = info->Status;
         DrvLogInfo("<<< RegNtPostRenameKey\r\n");
         DrvLogInfo("    Operation Status: 0x%08X (%s)\r\n", opStatus, NT_SUCCESS(opStatus) ? "SUCCESS" : "FAILED");
+        DbgPrintEx(
+            DPFLTR_IHVDRIVER_ID,
+            DPFLTR_ERROR_LEVEL,
+            "    Operation Status: 0x%08X (%s)\r\n", opStatus, NT_SUCCESS(opStatus) ? "SUCCESS" : "FAILED"
+        );
         break;
     }
     case RegNtPostQueryValueKey:
@@ -303,7 +320,7 @@ CmRegistryCallback(
         ULONG_PTR objectId;
         PUNICODE_STRING objectName;
         NTSTATUS status = STATUS_UNSUCCESSFUL;
-        status = CmCallbackGetKeyObjectIDEx(gRegistryCookie, object, &objectId, &objectName, 0);
+        status = CmCallbackGetKeyObjectIDEx(&gRegistryCookie, object, &objectId, &objectName, 0);
         if (!NT_SUCCESS(status))
         {
             DrvLogError("CmCallbackGetKeyObjectIDEx failed with status = 0x%X\n", status);

@@ -22,7 +22,7 @@ extern PFUNC_ZwQueryInformationProcess pfnZwQueryInformationProcess;
 extern OB_CALLBACK_REGISTRATION    gCallbackRegistration;
 extern PVOID                       gRegistrationHandle;
 extern UNICODE_STRING              gRegAltitude;
-extern PLARGE_INTEGER              gRegistryCookie;
+extern LARGE_INTEGER               gRegistryCookie;
 
 
 NTSTATUS

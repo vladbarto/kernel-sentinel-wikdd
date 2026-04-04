@@ -87,6 +87,7 @@
     <ClCompile>
       <WppEnabled>true</WppEnabled>
       <WppScanConfigurationData>$(SolutionDir)\trace.h</WppScanConfigurationData>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

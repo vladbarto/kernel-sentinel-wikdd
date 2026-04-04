@@ -268,7 +268,7 @@ DriverUnload(
         DrvLogError("PsSetCreateProcessNotifyRoutineEx failed in Driver Unload stage!");
         __debugbreak();
     }
-    CmUnRegisterCallback(*gRegistryCookie);
+    CmUnRegisterCallback(gRegistryCookie);
     ObUnRegisterCallbacks(gRegistrationHandle);
 
     WPP_CLEANUP(DriverObject);
@@ -301,6 +301,14 @@ DriverEntry(
     DriverObject->MajorFunction[IRP_MJ_CLOSE]           = MyCreateClose;
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = MyCreateDeviceControl;
     DriverObject->DriverUnload                          = DriverUnload;
+
+    UNICODE_STRING ustrFunctionName = RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
+    pfnZwQueryInformationProcess = (PFUNC_ZwQueryInformationProcess)(SIZE_T)MmGetSystemRoutineAddress(&ustrFunctionName);
+    if (!pfnZwQueryInformationProcess)
+    {
+        DrvLogCritical("MmGetSystemRoutineAddress failed!\r\n");
+        return STATUS_NOT_FOUND;
+    }
 
     RtlInitUnicodeString(
         &ntDeviceName,
@@ -359,12 +367,13 @@ DriverEntry(
     //
     // Registry notification
     //
+    __debugbreak();
     ntStatus = CmRegisterCallbackEx(
         CmRegistryCallback,
         &gRegAltitude, 
         DriverObject, 
         NULL, // ctx
-        gRegistryCookie, 
+        &gRegistryCookie, 
         NULL
     );
     if (!NT_SUCCESS(ntStatus))
@@ -398,7 +407,7 @@ DriverEntry(
     {
         DrvLogError("ObRegisterCallbacks failed with status 0x%X", ntStatus);
         PsSetCreateProcessNotifyRoutineEx(MyNotifyRoutine, TRUE);
-        CmUnRegisterCallback(*gRegistryCookie);
+        CmUnRegisterCallback(gRegistryCookie);
         return ntStatus;
     }
 
