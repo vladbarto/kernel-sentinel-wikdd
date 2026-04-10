@@ -142,7 +142,9 @@
     <ClInclude Include="dynamic-load-library.h" />
     <ClInclude Include="process-listing.h" />
     <ClInclude Include="threadpool.h" />
-    <ClInclude Include="trace.h" />
+    <ClInclude Include="trace.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
