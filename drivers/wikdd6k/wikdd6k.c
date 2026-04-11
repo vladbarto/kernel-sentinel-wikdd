@@ -15,28 +15,28 @@ DRIVER_INITIALIZE DriverEntry;
 /*VOID
 D*/
 
-Precreate(
-    FltObject,
-    PVOID* CompletionContext // ca si call context
-) {
-    PFLT_FILE_NAME_INFORMATION fi = NULL;
-
-    FltGetFileNameInformation(
-
-    ); // rutina specifica pt operatii cu fisiere si pt callbacks
-
-    return some_status;
-
-    FLT_PREOP_SUCCESS_WITH_CALLBACK; // avem o treaba, se face callback
-    FLT_PREOP_SUCCESS_NO_CALLBACK; // eu mi-am terminat treaba
-
-}
-
-CONST FLT_OPERATION_REGISTRATION callbacks[] = {
-    // paging io, dam cu 0
-    PreCreate, 
-    PostCreate
-}
+//Precreate(
+//    FltObject,
+//    PVOID* CompletionContext // ca si call context
+//) {
+//    PFLT_FILE_NAME_INFORMATION fi = NULL;
+//
+//    FltGetFileNameInformation(
+//
+//    ); // rutina specifica pt operatii cu fisiere si pt callbacks
+//
+//    return some_status;
+//
+//    FLT_PREOP_SUCCESS_WITH_CALLBACK; // avem o treaba, se face callback
+//    FLT_PREOP_SUCCESS_NO_CALLBACK; // eu mi-am terminat treaba
+//
+//}
+//
+//CONST FLT_OPERATION_REGISTRATION callbacks[] = {
+//    // paging io, dam cu 0
+//    PreCreate, 
+//    PostCreate
+//}
 NTSTATUS
 MyFilterUnload(
     _In_ FLT_FILTER_UNLOAD_FLAGS Flags
@@ -44,7 +44,7 @@ MyFilterUnload(
 {
     WikddLogInfo("Unloading driver. Flags = 0x%x", Flags);
 
-    if (gClientPort)
+    /*if (gClientPort)
     {
         FltCloseClientPort();
         gClientPort = NULL;
@@ -55,7 +55,7 @@ MyFilterUnload(
         gServerPort
     }
     FltUnregisterFilter(gFilterRegistration);
-    WPP_CLEANUP(gDriverObject);
+    WPP_CLEANUP(gDriverObject);*/
 
     return STATUS_SUCCESS;
 }
@@ -109,11 +109,11 @@ DriverEntry(
         return status;
     }
 
-    FltCreateCommunicationPort(
+    /*FltCreateCommunicationPort(
         gFilterRegistration,
         &gServerPort,
 
-    )
+    )*/
 
     return STATUS_SUCCESS;
 }

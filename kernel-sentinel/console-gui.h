@@ -1,15 +1,23 @@
 #pragma once
 
-#include <iostream>
+#include "common_includer.h"
+#include "threadpool.h"
+#include "process-listing.h"
+#include "driver-caller.h"
 
-void renderGui();
-void help();
-void start();
-void listProcessesUM();
-void firstIoctl();
-void secondIoctl();
-void IoctlDriver_2();
-void ThreadpoolInit();
-void ThreadpoolUninit();
-void ThreadpoolSubmitWorkItem();
-void exit();
+// ********** Scroll down for Kernel Sentinel GUI ********** 
+
+/////////////////////////////////////////
+// Here goes GUI definitions for       //
+// the first 5 labs implementing       //
+// legacy NT drivers and experimenting //
+/////////////////////////////////////////
+int RunLegacyDriverFeatures();
+
+///////////////////////////////////
+// Here goes GUI definitions for //
+// our Procmon-like monitoring   //
+// tool -- Kernel Sentinel       //
+///////////////////////////////////
+#define MAX_ARGUMENTS 3
+int RunKernelSentinelFeatures();

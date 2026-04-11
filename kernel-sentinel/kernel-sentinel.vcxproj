@@ -131,7 +131,9 @@
     <ClCompile Include="console-gui.cpp" />
     <ClCompile Include="driver-caller.cpp" />
     <ClCompile Include="dynamic-load-library.cpp" />
-    <ClCompile Include="kernel-sentinel.cpp" />
+    <ClCompile Include="main.cpp">
+      <WppFileExtensions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.cpp</WppFileExtensions>
+    </ClCompile>
     <ClCompile Include="process-listing.cpp" />
     <ClCompile Include="threadpool.cpp" />
   </ItemGroup>
