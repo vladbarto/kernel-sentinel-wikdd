@@ -194,8 +194,8 @@ Help() {
     printf("Available commands are:\r\n");
     printf("\t help\r\n");
     printf("\t exit\r\n");
-    printf("\t sentinel start_filter < process | registry | others >\r\n");
-    printf("\t sentinel stop_filter < process | registry | others >\r\n");
+    printf("\t sentinel start_filter < process | thread | image | registry | file >\r\n");
+    printf("\t sentinel stop_filter < process | thread | image | registry | file >\r\n");
 }
 
 NTSTATUS
@@ -290,13 +290,28 @@ NTSTATUS
 ThirdPosition(_In_ PCHAR word)
 {
     char process[] = "process";
+    char thread[] = "thread";
+    char image[] = "image";
     char registry[] = "registry";
+    char file[] = "file";
 
     if (NT_SUCCESS(CompareStrings(word, process))) {
         return STATUS_SUCCESS;
     }
 
+    if (NT_SUCCESS(CompareStrings(word, thread))) {
+        return STATUS_SUCCESS;
+    }
+
+    if (NT_SUCCESS(CompareStrings(word, image))) {
+        return STATUS_SUCCESS;
+    }
+
     if (NT_SUCCESS(CompareStrings(word, registry))) {
+        return STATUS_SUCCESS;
+    }
+
+    if (NT_SUCCESS(CompareStrings(word, file))) {
         return STATUS_SUCCESS;
     }
 
