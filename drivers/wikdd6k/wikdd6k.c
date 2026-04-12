@@ -1,16 +1,23 @@
 #include <fltKernel.h>
 #include <wdm.h>
 
+#include "include\my_driver.h"
+#include "include\communication.h"
+#include "include\filter\process.h"
+#include "include\filter\thread.h"
+#include "include\filter\image.h"
+#include "include\filter\registry.h"
+#include "include\filter\file.h"
 #include "trace.h"
 #include "wikdd6k.tmh"
 
+GLOBAL_DATA gDrv;
 
-
-PFLT_FILTER gFilterRegistration = NULL;
-PDRIVER_OBJECT gDriverObject = NULL;
-PFLT_PORT gServerPort = NULL;
-PFLT_PORT gClientPort = NULL;
-DRIVER_INITIALIZE DriverEntry;
+//PFLT_FILTER gFilterRegistration = NULL;
+//PDRIVER_OBJECT gDriverObject = NULL;
+//PFLT_PORT gServerPort = NULL;
+//PFLT_PORT gClientPort = NULL;
+//DRIVER_INITIALIZE DriverEntry;
 
 /*VOID
 D*/
@@ -53,13 +60,68 @@ MyFilterUnload(
     if (gServerPort) {
         FltCloseServerPort(..);
         gServerPort
-    }
-    FltUnregisterFilter(gFilterRegistration);
-    WPP_CLEANUP(gDriverObject);*/
+    }*/
+    FltUnregisterFilter(gDrv.FilterHandle);
+    WPP_CLEANUP(gDriverObject);
 
     return STATUS_SUCCESS;
 }
 
+
+CONST FLT_OPERATION_REGISTRATION callbacks[] = {
+    { IRP_MJ_CREATE,
+      0,
+      MyFilterPreOperation,
+      MyFilterPostOperation },
+
+    { IRP_MJ_CLOSE,
+      0,
+      MyFilterPreOperation,
+      MyFilterPostOperation },
+
+    { IRP_MJ_CLEANUP,
+      0,
+      MyFilterPreOperation,
+      MyFilterPostOperation },
+
+    { IRP_MJ_READ,
+      0,
+      MyFilterPreOperationSynchronize,
+      MyFilterPostOperation },
+
+    { IRP_MJ_WRITE,
+      0,
+      MyFilterPreOperationSynchronize,
+      MyFilterPostOperation },
+
+    { IRP_MJ_SET_INFORMATION,
+      0,
+      MyFilterPreOperationSynchronize,
+      MyFilterPostOperation },
+
+    { IRP_MJ_OPERATION_END }
+};
+
+CONST FLT_REGISTRATION FilterRegistration = {
+
+    sizeof(FLT_REGISTRATION),           //  Size
+    FLT_REGISTRATION_VERSION,           //  Version
+    0,                                  //  Flags
+
+    NULL,                               //  Context
+    callbacks,                          //  Operation callbacks
+
+    MyFilterUnload,                     //  MiniFilterUnload
+
+    NULL,                               //  InstanceSetup
+    NULL,                               //  InstanceQueryTeardown
+    NULL,                               //  InstanceTeardownStart
+    NULL,                               //  InstanceTeardownComplete
+
+    NULL,                               //  GenerateFileName
+    NULL,                               //  GenerateDestinationFileName
+    NULL                                //  NormalizeNameComponent
+};
 
 NTSTATUS
 DriverEntry(
@@ -67,41 +129,37 @@ DriverEntry(
     _In_ PUNICODE_STRING RegistryPath
 )
 {
-    gDriverObject = DriverObject;
-
     WPP_INIT_TRACING(DriverObject, RegistryPath);
 
     WikddLogInfo("Starting driver ...");
 
-    CONST FLT_OPERATION_REGISTRATION callbacks[] = {
-        { IRP_MJ_OPERATION_END }
-    };
+    // 
+    // Initialize global data. 
+    //
+    gDrv.DriverObject = DriverObject;
+    UNICODE_STRING altitude = RTL_CONSTANT_STRING(L"370030.1");
+    gDrv.Altitude = altitude;
 
-    CONST FLT_REGISTRATION fltReg = {
+    //
+    // We will need ZwQueryInformationProcess for process names
+    //
 
-        sizeof(FLT_REGISTRATION),           //  Size
-        FLT_REGISTRATION_VERSION,           //  Version
-        0,                                  //  Flags
+    UNICODE_STRING ustrFunctionName = RTL_CONSTANT_STRING(L"ZwQueryInformationProcess");
+    gDrv.pfnZwQueryInformationProcess = (PFUNC_ZwQueryInformationProcess)(SIZE_T)MmGetSystemRoutineAddress(&ustrFunctionName);
 
-        NULL,                               //  Context
-        callbacks,                          //  Operation callbacks
+    if (!gDrv.pfnZwQueryInformationProcess)
+    {
+        WikddLogError("Unable to resolve ZwQueryInformationProcess!");
+        return STATUS_INSUFF_SERVER_RESOURCES;
+    }
 
-        MyFilterUnload,                     //  MiniFilterUnload
-
-        NULL,                               //  InstanceSetup
-        NULL,                               //  InstanceQueryTeardown
-        NULL,                               //  InstanceTeardownStart
-        NULL,                               //  InstanceTeardownComplete
-
-        NULL,                               //  GenerateFileName
-        NULL,                               //  GenerateDestinationFileName
-        NULL                                //  NormalizeNameComponent
-    };
-    
+    //
+    //  Register with FltMgr to tell it our callback routines
+    //
     NTSTATUS status = FltRegisterFilter(
         DriverObject,
-        &fltReg,
-        &gFilterRegistration
+        &FilterRegistration,
+        &gDrv.FilterHandle
     );
     if (!NT_SUCCESS(status))
     {
@@ -109,11 +167,69 @@ DriverEntry(
         return status;
     }
 
-    /*FltCreateCommunicationPort(
-        gFilterRegistration,
-        &gServerPort,
+    FLT_ASSERT(NT_SUCCESS(status));
+    if (NT_SUCCESS(status))
+    {
+        //
+        //  Prepare communication layer
+        //
+        NTSTATUS status_init_comm_port = CommInitializeFilterCommunicationPort();
+        if (NT_NOT_SUCCESS(status_init_comm_port)) {
 
-    )*/
+            FltUnregisterFilter(gDrv.FilterHandle);
+            return status_init_comm_port;
+        }
 
-    return STATUS_SUCCESS;
+        NTSTATUS status_init_proc_flt = ProcessFilterInitialize();
+        if (NT_NOT_SUCCESS(status_init_proc_flt))
+        {
+            CommUninitializeFilterCommunicationPort();
+            FltUnregisterFilter(gDrv.FilterHandle);
+            return status_init_proc_flt;
+        }
+
+        NTSTATUS status_init_thread_flt = ThreadFilterInitialize();
+        if (NT_NOT_SUCCESS(status_init_thread_flt))
+        {
+            ProcessFilterUninitialize();
+            CommUninitializeFilterCommunicationPort();
+            FltUnregisterFilter(gDrv.FilterHandle);
+            return status_init_thread_flt;
+        }
+
+        NTSTATUS status_init_img_flt = ImageFilterInitialize();
+        if (NT_NOT_SUCCESS(status_init_img_flt))
+        {
+            ThreadFilterUninitialize();
+            ProcessFilterUninitialize();
+            CommUninitializeFilterCommunicationPort();
+            FltUnregisterFilter(gDrv.FilterHandle);
+            return status_init_img_flt;
+        }
+
+        NTSTATUS status_init_reg_flt = RegistryFilterInitialize();
+        if (NT_NOT_SUCCESS(status_init_reg_flt))
+        {
+            ImageFilterUninitialize();
+            ThreadFilterUninitialize();
+            ProcessFilterUninitialize();
+            CommUninitializeFilterCommunicationPort();
+            FltUnregisterFilter(gDrv.FilterHandle);
+            return status_init_reg_flt;
+        }
+
+
+        //
+        //  Start filtering i/o
+        //
+        status = FltStartFiltering(gDrv.FilterHandle);
+        if (NT_NOT_SUCCESS(status))
+        {
+            CommUninitializeFilterCommunicationPort();
+            ProcessFilterUninitialize();
+            FltUnregisterFilter(gDrv.FilterHandle);
+        }
+    }
+
+    return status;
 }

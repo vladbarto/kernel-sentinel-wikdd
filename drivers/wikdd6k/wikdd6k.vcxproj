@@ -245,9 +245,24 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="communication.c" />
+    <ClCompile Include="filter\file.c" />
+    <ClCompile Include="filter\image.c" />
+    <ClCompile Include="filter\process.c" />
+    <ClCompile Include="filter\registry.c" />
+    <ClCompile Include="filter\thread.c" />
     <ClCompile Include="wikdd6k.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\communication.h" />
+    <ClInclude Include="include\communication_protocol.h" />
+    <ClInclude Include="include\filter\file.h" />
+    <ClInclude Include="include\filter\image.h" />
+    <ClInclude Include="include\filter\process.h" />
+    <ClInclude Include="include\filter\registry.h" />
+    <ClInclude Include="include\filter\thread.h" />
+    <ClInclude Include="include\filter\utils.h" />
+    <ClInclude Include="include\my_driver.h" />
     <ClInclude Include="trace.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
