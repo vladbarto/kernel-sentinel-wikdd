@@ -1,5 +1,5 @@
 #pragma once
-#include "my_driver.h"
+#include "..\..\include\my_driver.h"
 
 NTSTATUS
 RegistryFilterInitialize();

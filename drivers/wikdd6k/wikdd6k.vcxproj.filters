@@ -17,6 +17,12 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Header Files\filtering">
+      <UniqueIdentifier>{93dd0e34-751c-4d4c-b93c-cb9af27e8aac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\communication">
+      <UniqueIdentifier>{8ee0c986-1c1c-4c6e-9547-456ed252f588}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="wikdd6k.inf">
@@ -27,10 +33,61 @@
     <ClCompile Include="wikdd6k.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="communication.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\image.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\process.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\registry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\thread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="threadpool.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="trace.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\my_driver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threadpool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\file.h">
+      <Filter>Header Files\filtering</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\image.h">
+      <Filter>Header Files\filtering</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\process.h">
+      <Filter>Header Files\filtering</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\registry.h">
+      <Filter>Header Files\filtering</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\thread.h">
+      <Filter>Header Files\filtering</Filter>
+    </ClInclude>
+    <ClInclude Include="include\communication.h">
+      <Filter>Header Files\communication</Filter>
+    </ClInclude>
+    <ClInclude Include="include\communication_protocol.h">
+      <Filter>Header Files\communication</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

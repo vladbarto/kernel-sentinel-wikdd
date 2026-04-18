@@ -20,4 +20,4 @@ int RunLegacyDriverFeatures();
 // tool -- Kernel Sentinel       //
 ///////////////////////////////////
 #define MAX_ARGUMENTS 3
-int RunKernelSentinelFeatures();
+NTSTATUS RunKernelSentinelFeatures();

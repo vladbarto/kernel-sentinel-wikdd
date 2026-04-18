@@ -3,6 +3,7 @@
 
 #include "include\my_driver.h"
 #include "include\communication.h"
+#include "include\communication_protocol.h"
 #include "include\filter\process.h"
 #include "include\filter\thread.h"
 #include "include\filter\image.h"
@@ -49,7 +50,7 @@ MyFilterUnload(
     _In_ FLT_FILTER_UNLOAD_FLAGS Flags
 )
 {
-    WikddLogInfo("Unloading driver. Flags = 0x%x", Flags);
+    //WikddLogInfo("Unloading driver. Flags = 0x%x", Flags);
 
     /*if (gClientPort)
     {
@@ -62,7 +63,8 @@ MyFilterUnload(
         gServerPort
     }*/
     FltUnregisterFilter(gDrv.FilterHandle);
-    WPP_CLEANUP(gDriverObject);
+    TpUninitialize(&gDrv.ThreadPool);
+    WPP_CLEANUP(gDrv.DriverObject);
 
     return STATUS_SUCCESS;
 }
@@ -139,6 +141,8 @@ DriverEntry(
     gDrv.DriverObject = DriverObject;
     UNICODE_STRING altitude = RTL_CONSTANT_STRING(L"370030.1");
     gDrv.Altitude = altitude;
+    gDrv.MonitoringFlags = commNone;
+    TpInit(&gDrv.ThreadPool, MAX_NUMBER_THREADS);
 
     //
     // We will need ZwQueryInformationProcess for process names

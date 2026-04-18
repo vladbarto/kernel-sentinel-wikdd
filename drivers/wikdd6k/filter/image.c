@@ -13,13 +13,24 @@ ImageLoadNotifyRoutine(
     PUNICODE_STRING pProcessPath = NULL;
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-    UNREFERENCED_PARAMETER(ProcessId);
     UNREFERENCED_PARAMETER(ImageInfo);
 
-    if (!gDrv.MonitoringStarted || !ProcessId)
+    if (!gDrv.MonitoringStarted || !(gDrv.MonitoringFlags & commImageFilter))
     {
         return;
     }
+
+    PMY_CONTEXT ctx = (PMY_CONTEXT)ExAllocatePoolWithTag(
+        NonPagedPool,
+        sizeof(MY_CONTEXT),
+        UTILS_TAG_NOTIFICATION
+    );
+
+    if (!ctx) {
+        LogError(L"Failed to allocate notification work context");
+        return;
+    }
+    RtlZeroMemory(ctx, sizeof(MY_CONTEXT));
 
     __try
     {
@@ -30,10 +41,66 @@ ImageLoadNotifyRoutine(
             __leave;
         }
 
+        ctx->NotificationType = commImageFilter;
+        ctx->ProcessId = HandleToULong(ProcessId);
+        ctx->OperationResult = status;
+
+        // Copy process name
+        if (pProcessPath && pProcessPath->Length > 0) 
+        {
+            ctx->ProcessName.Length = pProcessPath->Length;
+            ctx->ProcessName.MaximumLength = pProcessPath->MaximumLength;
+            ctx->ProcessName.Buffer = (PWCH)ExAllocatePoolWithTag(NonPagedPool, pProcessPath->MaximumLength, UTILS_TAG_NOTIFICATION);
+            if (ctx->ProcessName.Buffer)
+            {
+                RtlCopyUnicodeString(&ctx->ProcessName, pProcessPath);
+            }
+        }
+
+        // Copy image path
+        if (FullImageName && FullImageName->Length > 0)
+        {
+            ctx->TargetPath.Length = FullImageName->Length;
+            ctx->TargetPath.MaximumLength = FullImageName->MaximumLength;
+            ctx->TargetPath.Buffer = (PWCH)ExAllocatePoolWithTag(NonPagedPool, FullImageName->MaximumLength, UTILS_TAG_NOTIFICATION);
+            if(ctx->TargetPath.Buffer)
+            {
+                RtlCopyUnicodeString(&ctx->TargetPath, FullImageName);
+            }
+        }
+
+        // Details
+        RtlStringCbPrintfW(
+            ctx->Details,
+            sizeof(ctx->Details),
+            L"ImageBase: 0x%p, ImageSize: 0x%X",
+            ImageInfo->ImageBase,
+            ImageInfo->ImageSize
+        );
+
+        // Enqueue work item; let the KM ThreadPool deal with it
+        status = TpEnqueueWorkItem(&gDrv.ThreadPool, MyWorkItemRoutine, ctx);
+        if (NT_NOT_SUCCESS(status)) {
+            LogError(L"TpEnqueueWorkItem failed with 0x%X", status);
+        }
+        
+
         WikddLogInfo("Image Notification for process %wZ. Path = %wZ", pProcessPath, FullImageName);
     }
     __finally
     {
+        if (NT_NOT_SUCCESS(status) && ctx) 
+        {
+            if (ctx->ProcessName.Buffer)
+            {
+                ExFreePoolWithTag(ctx->ProcessName.Buffer, UTILS_TAG_NOTIFICATION);
+            }
+            if (ctx->TargetPath.Buffer)
+            {
+                ExFreePoolWithTag(ctx->TargetPath.Buffer, UTILS_TAG_NOTIFICATION);
+            }
+        }
+
         if (pProcessPath)
         {
             ExFreePoolWithTag(pProcessPath, UTILS_TAG_UNICODE_STRING);

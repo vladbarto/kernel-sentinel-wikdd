@@ -226,6 +226,7 @@
       <WppEnabled>true</WppEnabled>
       <WppScanConfigurationData>$(ProjectDir)trace.h</WppScanConfigurationData>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <PreprocessorDefinitions>KERNEL_MODE;_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -251,6 +252,7 @@
     <ClCompile Include="filter\process.c" />
     <ClCompile Include="filter\registry.c" />
     <ClCompile Include="filter\thread.c" />
+    <ClCompile Include="threadpool.c" />
     <ClCompile Include="wikdd6k.c" />
   </ItemGroup>
   <ItemGroup>
@@ -263,6 +265,7 @@
     <ClInclude Include="include\filter\thread.h" />
     <ClInclude Include="include\filter\utils.h" />
     <ClInclude Include="include\my_driver.h" />
+    <ClInclude Include="include\threadpool.h" />
     <ClInclude Include="trace.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

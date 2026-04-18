@@ -189,10 +189,15 @@ int RunLegacyDriverFeatures() {
 // our Procmon-like monitoring   //
 // tool -- Kernel Sentinel       //
 ///////////////////////////////////
+#include "global_data.h"
+#include "communication\driver_commands.h"
+
+
 VOID
 Help() {
     printf("Available commands are:\r\n");
     printf("\t help\r\n");
+    printf("\t version\r\n");
     printf("\t exit\r\n");
     printf("\t sentinel start_filter < process | thread | image | registry | file >\r\n");
     printf("\t sentinel stop_filter < process | thread | image | registry | file >\r\n");
@@ -259,8 +264,15 @@ FirstPosition(_In_ PCHAR word, _In_ BYTE argc)
 NTSTATUS
 SecondPosition(_In_ PCHAR word, _In_ BYTE argc)
 {
+    char version[] = "version";
     char start_filter[] = "start_filter";
     char stop_filter[] = "stop_filter";
+    
+    if (NT_SUCCESS(CompareStrings(word, version))) {
+        PULONG OutDriverVersion = (PULONG) malloc (sizeof(ULONG));
+        CmdGetDriverVersion(OutDriverVersion);
+        return STATUS_SUCCESS;
+    }
 
     if (NT_SUCCESS(CompareStrings(word, start_filter))) {
         if (argc != MAX_ARGUMENTS)
@@ -296,6 +308,8 @@ ThirdPosition(_In_ PCHAR word)
     char file[] = "file";
 
     if (NT_SUCCESS(CompareStrings(word, process))) {
+        CmdStartMonitoring(commProcessFilter); // trebe scoasa logica in afara for-ului
+
         return STATUS_SUCCESS;
     }
 
@@ -319,7 +333,9 @@ ThirdPosition(_In_ PCHAR word)
     return STATUS_INVALID_PARAMETER;
 }
 
-int RunKernelSentinelFeatures() {
+NTSTATUS 
+RunKernelSentinelFeatures() 
+{
     int bufferSize = 1024;
     char *commandLine = (char*) malloc (bufferSize * sizeof(char));
     NTSTATUS status = STATUS_SUCCESS;
@@ -331,7 +347,7 @@ int RunKernelSentinelFeatures() {
         if (!NT_SUCCESS(status)) {
             printf("Error occured when reading command from line. Exiting process...\r\n");
             free(commandLine);
-            return -1;
+            return STATUS_UNSUCCESSFUL;
         }
 
         char* next_token = NULL;
@@ -346,27 +362,39 @@ int RunKernelSentinelFeatures() {
             word = strtok_s(NULL, delimiter, &next_token);
         }
 
+        // Starting filter driver communication
+        CommDriverPreinitialize();
+        NTSTATUS status = CommDriverInitialize();
+        if (status < 0)
+        {
+            return status;
+        }
+
+        // Interpreting the user command
         for (BYTE i = 0; i < Position; i++) {
             //printf("[%s]\n", argv[i]);
             switch (i) {
             case 0:
                 status = FirstPosition(argv[i], Position);
                 if (!NT_SUCCESS(status))
-                    return -1;
+                    return STATUS_INVALID_PARAMETER_1;
                 break;
             case 1:
                 status = SecondPosition(argv[i], Position);
                 if (!NT_SUCCESS(status))
-                    return -2;
+                    return STATUS_INVALID_PARAMETER_2;
                 break;
             case 2:
-                status = ThirdPosition(argv[i]);
+                status = ThirdPosition(argv[i]); // Calling will launch request to KM
                 if (!NT_SUCCESS(status))
-                    return -3;
+                    return STATUS_INVALID_PARAMETER_3;
                 break;
             default: printf("[%s]\n", word);
             }
         }
+
+        // Ending the driver communication with the filter
+        CommDriverUninitialize();
     }
 
     return 0;

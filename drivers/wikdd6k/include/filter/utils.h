@@ -2,6 +2,7 @@
 #include "..\..\include\my_driver.h"
 
 #define UTILS_TAG_UNICODE_STRING 'hcu$'
+#define UTILS_TAG_NOTIFICATION 'FTON'
 
 NTSTATUS
 GetImagePathFromOpenHandle(

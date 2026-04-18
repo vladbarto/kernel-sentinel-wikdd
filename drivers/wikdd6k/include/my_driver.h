@@ -3,8 +3,10 @@
 #define _MY_DRIVER_H_INCLUDED_
 //
 //   Author(s)    : Radu PORTASE(rportase@bitdefender.com)
+//                  Vlad BARTOLOMEI (vlad.bartolomei@outlook.com)
 //
 #include "communication.h"
+#include "threadpool.h"
 
 #define NT_NOT_SUCCESS(status) !NT_SUCCESS(status)
 typedef
@@ -27,7 +29,9 @@ typedef struct _GLOBAL_DATA
     LARGE_INTEGER  RegistryCookie;
 
     ULONG MonitoringStarted;
+    ULONG MonitoringFlags;
 
+    MY_THREAD_POOL ThreadPool;
     PFUNC_ZwQueryInformationProcess pfnZwQueryInformationProcess;
 }GLOBAL_DATA, * PGLOBAL_DATA;
 

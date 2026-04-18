@@ -4,7 +4,7 @@
 
 #pragma region FLT_PORT Commands
 /*++
-This region contains implementations for all the commands received by MY_DRIVER.sys from MY_DRIVERCORE trough the FLT Port
+This region contains implementations for all the commands received by MY_DRIVER.sys from MY_DRIVERCORE through the FLT Port
 
 All commands defined here must have the following prototype:
 
@@ -20,7 +20,7 @@ _Out_ PULONG BytesWritten
 Note: Hccp stands for Handler for Core Command Private, keep this in mind when naming a command
 --*/
 /// The parameters of the function are outside of our trust domain.The parameters are checked to not be null
-/// before entering the handlers.This may not be enough for commands with variable buffer sizes.Make sure all
+/// before entering the handlers.This may not be enough for commands with variable buffer sizes. Make sure all
 /// commands check the parameters correctly.
 /// Probing is also done for the parameters.
 
@@ -95,14 +95,21 @@ HccpStartMonitoring(
     _Out_ PULONG BytesWritten
 )
 {
-    UNREFERENCED_PARAMETER(InputBuffer);
-    UNREFERENCED_PARAMETER(InputBufferLength);
     UNREFERENCED_PARAMETER(OutputBuffer);
     UNREFERENCED_PARAMETER(OutputBufferLength);
-    UNREFERENCED_PARAMETER(BytesWritten);
+
+    PCOMM_CMD_START_MONITORING pCmd = (PCOMM_CMD_START_MONITORING)InputBuffer;
+    if (InputBufferLength < sizeof(COMM_CMD_START_MONITORING)) {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    gDrv.MonitoringStarted = 1;
+    gDrv.MonitoringFlags |= pCmd->Header.NotificationType; // Activez fix bitul de care am nevoie cu Logic OR
+
+    LogTrace(L"Monitoring Started for type: %u", gDrv.MonitoringFlags);
 
     *BytesWritten = 0;
-    gDrv.MonitoringStarted = 1;
+    
     return STATUS_SUCCESS;
 }
 
@@ -118,14 +125,21 @@ HccpStopMonitoring(
     _Out_ PULONG BytesWritten
 )
 {
-    UNREFERENCED_PARAMETER(InputBuffer);
-    UNREFERENCED_PARAMETER(InputBufferLength);
     UNREFERENCED_PARAMETER(OutputBuffer);
     UNREFERENCED_PARAMETER(OutputBufferLength);
-    UNREFERENCED_PARAMETER(BytesWritten);
+
+    PCOMM_CMD_STOP_MONITORING pCmd = (PCOMM_CMD_STOP_MONITORING)InputBuffer;
+    if (InputBufferLength < sizeof(COMM_CMD_STOP_MONITORING)) {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    gDrv.MonitoringStarted = 0;
+    gDrv.MonitoringFlags &= ~(pCmd->Header.NotificationType); // Sterg fix bitul pe care il vreau de fiecare data (mergea si cu XOR value, dar doar prima data)
+
+    LogTrace(L"Monitoring Stopped for type: %u", gDrv.MonitoringFlags);
 
     *BytesWritten = 0;
-    gDrv.MonitoringStarted = 0;
+    
     return STATUS_SUCCESS;
 }
 

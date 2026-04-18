@@ -412,12 +412,8 @@ TpEnqueueWorkItem(
     ListInsertHead(&ThreadPool->Queue, &item->ListEntry);
 
     /* [todo] Notify thread pool WorkScheduledEvent that a new item is available. */
-    ThreadPool->WorkScheduledEvent = CreateEventW(
-        NULL,
-        FALSE,
-        TRUE, // initial state = signaled
-        NULL // No event name provided (maybe in future work)
-    );
+    SetEvent(ThreadPool->WorkScheduledEvent);
+
 
     // Check for validity
     if (!ThreadPool->WorkScheduledEvent) {

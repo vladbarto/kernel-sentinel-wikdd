@@ -1,6 +1,7 @@
 // kernel-sentinel.cpp : This file contains the 'main' function. Program execution begins and ends there.
 // Renamed to main.cpp`
 
+#include "logging\logging.h"
 #include "common_includer.h"
 #include "threadpool.h"
 #include "console-gui.h"
@@ -8,10 +9,16 @@
 #include "driver-caller.h"
 #include "main.tmh"
 
-int main()
+NTSTATUS
+main()
 {
+    InitializeLogging(L"Z:\\driver_notifications.log");
+
     //return RunLegacyDriverFeatures();
-    return RunKernelSentinelFeatures();
+    NTSTATUS status = RunKernelSentinelFeatures();
+
+    CleanupLogging();
+    return status;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
