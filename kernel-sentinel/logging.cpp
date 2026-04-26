@@ -3,8 +3,8 @@
 extern SRWLOCK gLogLock = SRWLOCK_INIT;
 extern HANDLE gLogFile = INVALID_HANDLE_VALUE;
 
-int Error(const char* message) {
-	wprintf(L"%s (error=%d)\r\n", message, GetLastError());
+int LogError(const char* message) {
+	wprintf(L"%hs (error=%d)\r\n", message, GetLastError());
 	return -1;
 }
 
@@ -25,11 +25,11 @@ InitializeLogging(const wchar_t* LogPath)
 
 	if (gLogFile == INVALID_HANDLE_VALUE)
 	{
-		Error("[Error] Failed to create log file\n");
+		LogError("[Error] Failed to create log file\n");
 	}
 	else
 	{
-		Error("[Info] Log file initialized!");
+		LogError("[Info] Log file initialized!");
 	}
 }
 

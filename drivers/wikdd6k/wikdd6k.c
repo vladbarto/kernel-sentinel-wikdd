@@ -1,5 +1,7 @@
 #include <fltKernel.h>
 #include <wdm.h>
+#include "trace.h"
+#include "wikdd6k.tmh"
 
 #include "include\my_driver.h"
 #include "include\communication.h"
@@ -9,8 +11,6 @@
 #include "include\filter\image.h"
 #include "include\filter\registry.h"
 #include "include\filter\file.h"
-#include "trace.h"
-#include "wikdd6k.tmh"
 
 GLOBAL_DATA gDrv;
 
@@ -133,7 +133,7 @@ DriverEntry(
 {
     WPP_INIT_TRACING(DriverObject, RegistryPath);
 
-    WikddLogInfo("Starting driver ...");
+    DrvLogError("Starting driver ...");
 
     // 
     // Initialize global data. 
@@ -153,7 +153,7 @@ DriverEntry(
 
     if (!gDrv.pfnZwQueryInformationProcess)
     {
-        WikddLogError("Unable to resolve ZwQueryInformationProcess!");
+        DrvLogError("Unable to resolve ZwQueryInformationProcess!");
         return STATUS_INSUFF_SERVER_RESOURCES;
     }
 
@@ -167,7 +167,7 @@ DriverEntry(
     );
     if (!NT_SUCCESS(status))
     {
-        WikddLogApiFailedNt(status, "FltRegisterFilter");
+        DrvLogError("FltRegisterFilter: 0x%X", status);
         return status;
     }
 

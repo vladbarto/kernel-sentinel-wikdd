@@ -42,13 +42,13 @@
     <ClCompile Include="driver-caller.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="driver_communication.c">
+    <ClCompile Include="driver_communication.cpp">
       <Filter>Source Files\communication</Filter>
     </ClCompile>
-    <ClCompile Include="driver_commands.c">
+    <ClCompile Include="driver_commands.cpp">
       <Filter>Source Files\communication</Filter>
     </ClCompile>
-    <ClCompile Include="message_handlers.c">
+    <ClCompile Include="message_handlers.cpp">
       <Filter>Source Files\communication</Filter>
     </ClCompile>
     <ClCompile Include="logging.cpp">

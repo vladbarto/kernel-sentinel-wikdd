@@ -1,7 +1,7 @@
-#include <ntstrsafe.h>
 #include "..\include\filter\process.h"
 #include "..\include\filter\utils.h"
 #include "..\include\communication.h"
+#include "process.tmh"
 
 void
 ProcFltSendMessageProcessCreate(
@@ -22,7 +22,7 @@ ProcFltSendMessageProcessCreate(
     LARGE_INTEGER timestamp = { 0 };
     KeQuerySystemTime(&timestamp);
 
-    RtlUnicodeStringPrintf(&message, L"[%llu] [ProcessCreate] [%p] Path = %wZ, CommandLine = %wZ",
+    RtlUnicodeStringPrintf(&message, L"[%llu] [ProcessCreate] [%u] Path = %wZ, CommandLine = %wZ",
         timestamp.QuadPart, HandleToUlong(ProcessId), CreateInfo->ImageFileName, CreateInfo->CommandLine);
 
 
@@ -52,14 +52,14 @@ ProcFltSendMessageProcessTerminate(
     NTSTATUS status = GetImagePathFromPid(ProcessId, &ImageFileName);
     if (NT_SUCCESS(status))
     {
-        RtlUnicodeStringPrintf(&message, L"[%llu] [ProcessTerminate] [%p] Path = %wZ",
+        RtlUnicodeStringPrintf(&message, L"[%llu] [ProcessTerminate] [%u] Path = %wZ",
             timestamp.QuadPart, HandleToUlong(ProcessId), ImageFileName);
 
         ExFreePoolWithTag(ImageFileName, UTILS_TAG_UNICODE_STRING);
     }
     else
     {
-        RtlUnicodeStringPrintf(&message, L"[%llu] [ProcessTerminate] [%p] Path = ERROR",
+        RtlUnicodeStringPrintf(&message, L"[%llu] [ProcessTerminate] [%u] Path = ERROR",
             timestamp.QuadPart, HandleToUlong(ProcessId));
     }
 

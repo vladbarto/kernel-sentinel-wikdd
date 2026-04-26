@@ -5,10 +5,12 @@
 #define _CRTDBG_MAP_ALLOC
 #define WIN32_NO_STATUS
 #include <Windows.h>
-#include <winternl.h>
 #include <intsafe.h>
 #undef WIN32_NO_STATUS
+#pragma warning(push)
+#pragma warning(disable: 4005)
 #include <ntstatus.h>
+#pragma warning(pop)
 
 #include <stdio.h>
 #include <assert.h>

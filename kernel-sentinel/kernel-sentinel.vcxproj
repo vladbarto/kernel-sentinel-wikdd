@@ -130,14 +130,14 @@
   <ItemGroup>
     <ClCompile Include="console-gui.cpp" />
     <ClCompile Include="driver-caller.cpp" />
-    <ClCompile Include="driver_commands.c" />
-    <ClCompile Include="driver_communication.c" />
+    <ClCompile Include="driver_commands.cpp" />
+    <ClCompile Include="driver_communication.cpp" />
     <ClCompile Include="dynamic-load-library.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="main.cpp">
       <WppFileExtensions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.cpp</WppFileExtensions>
     </ClCompile>
-    <ClCompile Include="message_handlers.c" />
+    <ClCompile Include="message_handlers.cpp" />
     <ClCompile Include="process-listing.cpp" />
     <ClCompile Include="threadpool.cpp" />
   </ItemGroup>

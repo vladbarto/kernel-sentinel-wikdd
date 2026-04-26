@@ -1,6 +1,6 @@
-#include <ntstrsafe.h>
 #include "..\include\filter\utils.h"
 #include "..\include\filter\thread.h"
+#include "thread.tmh"
 
 VOID
 ThreadFilterNotifyRoutine(
@@ -25,11 +25,11 @@ ThreadFilterNotifyRoutine(
         status = GetImagePathFromPid(ProcessId, &pProcessPath);
         if (!NT_SUCCESS(status))
         {
-            LogError("GetCurrentProcessImagePath failed with status 0x%X\n", status);
+            DrvLogError("GetCurrentProcessImagePath failed with status 0x%X\n", status);
             __leave;
         }
 
-        LogInfo("Thread Notification for process %wZ", pProcessPath);
+        DrvLogInfo("Thread Notification for process %wZ", pProcessPath);
     }
     __finally
     {

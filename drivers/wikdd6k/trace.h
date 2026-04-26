@@ -1,42 +1,50 @@
+#pragma once
+
 #ifndef _TRACE_H_
 #define _TRACE_H_
+//
+// Copyright (C) 2015 BitDefender S.R.L.
+// Author(s) : Radu PORTASE(rportase@bitdefender.com)
+//
+//
+// WPP Control GUID for MyDriver: bb6301c6-4e62-4bbf-b869-33b533287481
+//
 
-// {A426CEAE-624D-49AE-A306-3F6BE68D15E6}
-#define WPP_CONTROL_GUIDS                                                       \
-    WPP_DEFINE_CONTROL_GUID(                                                    \
-        Wikdd, (A426CEAE, 624D, 49AE, A306, 3F6BE68D15E6),                      \
-        WPP_DEFINE_BIT(TRACE_FLAG_GENERAL)     /* bit  0 = 0x00000001 */        \
-    )
-
-#define WPP_LEVEL_EVENT_LOGGER(level,event) WPP_LEVEL_LOGGER(event)
-#define WPP_LEVEL_EVENT_ENABLED(level,event) (WPP_LEVEL_ENABLED(event) && WPP_CONTROL(WPP_BIT_ ## event).Level >= level)
+#define WPP_CONTROL_GUIDS \
+ WPP_DEFINE_CONTROL_GUID ( \
+	 MyDriverTraceGuid, (bb6301c6,4e62,4bbf,b869,33b533287481), \
+	 WPP_DEFINE_BIT(TRACE_FLAG_DRIVER) /* bit 0 = 0x00000001 */ \
+	 WPP_DEFINE_BIT(TRACE_FLAG_FILE_FILTER) /* bit 1 = 0x00000002 */ \
+)
+/***
+ *  Because we are using our custom logging function DrvLogMessage (Flags,
+ * Level, Message, ...) we need to define the flowing macros
+*/
 
 #define WPP_LEVEL_FLAGS_LOGGER(lvl,flags) WPP_LEVEL_LOGGER(flags)
-#define WPP_LEVEL_FLAGS_ENABLED(lvl,flags) (WPP_LEVEL_ENABLED(flags) && WPP_CONTROL(WPP_BIT_ ## flags).Level  >= lvl)
-
-#define WPP_LEVEL_FLAGS_STATUS_LOGGER(lvl, flags, status) WPP_LEVEL_LOGGER(flags)
-#define WPP_LEVEL_FLAGS_STATUS_ENABLED(lvl, flags, status) WPP_LEVEL_FLAGS_ENABLED(lvl, flags)
-
-#define TMH_STRINGIFYX(x) #x
-#define TMH_STRINGIFY(x) TMH_STRINGIFYX(x)
-
+#define WPP_LEVEL_FLAGS_ENABLED(lvl,flags) (WPP_LEVEL_ENABLED(flags) && WPP_CONTROL(WPP_BIT_ ## flags).Level >= lvl)
+//
+// Here we define our logging functions
 //
 // begin_wpp config
 //
 // Functions for logging driver related events
-//
-// FUNC WikddLogTrace{LEVEL=TRACE_LEVEL_VERBOSE, FLAGS=TRACE_FLAG_GENERAL}(MSG, ...);
-// FUNC WikddLogInfo{LEVEL=TRACE_LEVEL_INFORMATION, FLAGS=TRACE_FLAG_GENERAL}(MSG, ...);
-// FUNC WikddLogWarning{LEVEL=TRACE_LEVEL_WARNING, FLAGS=TRACE_FLAG_GENERAL}(MSG, ...);
-// FUNC WikddLogError{LEVEL=TRACE_LEVEL_ERROR, FLAGS=TRACE_FLAG_GENERAL}(MSG, ...);
-// FUNC WikddLogCritical{LEVEL=TRACE_LEVEL_CRITICAL, FLAGS=TRACE_FLAG_GENERAL}(MSG, ...);
-// 
-// USEPREFIX (WikddLogApiFailedNt, "%!STDPREFIX!");
-// FUNC WikddLogApiFailedNt{LEVEL=TRACE_LEVEL_ERROR, FLAGS=TRACE_FLAG_GENERAL}(STATUS, MSG, ...);
-// USESUFFIX (WikddLogApiFailedNt, " failed with status %!STATUS!", STATUS);
-//
-//
-// end_wpp
-//
 
-#endif // !__HP_
+//FUNC DrvLogTrace{LEVEL=TRACE_LEVEL_VERBOSE, FLAGS=TRACE_FLAG_DRIVER}(MSG, ...);
+//FUNC DrvLogInfo{LEVEL=TRACE_LEVEL_INFORMATION, FLAGS=TRACE_FLAG_DRIVER}(MSG, ...);
+//FUNC DrvLogWarning{LEVEL=TRACE_LEVEL_WARNING, FLAGS=TRACE_FLAG_DRIVER}(MSG, ...);
+//FUNC DrvLogError{LEVEL=TRACE_LEVEL_ERROR, FLAGS=TRACE_FLAG_DRIVER}(MSG,...);
+//FUNC DrvLogCritical{LEVEL=TRACE_LEVEL_CRITICAL, FLAGS=TRACE_FLAG_DRIVER}(MSG, ...);
+//
+// Functions for logging file filter related events
+//FUNC FltfLogTrace{LEVEL=TRACE_LEVEL_VERBOSE, FLAGS = TRACE_FLAG_FILE_FILTER}(MSG, ...);
+//FUNC FltfLogInfo{LEVEL=TRACE_LEVEL_INFORMATION, FLAGS = TRACE_FLAG_FILE_FILTER}(MSG, ...);
+//FUNC FltfLogWarning{LEVEL=TRACE_LEVEL_WARNING, FLAGS = TRACE_FLAG_FILE_FILTER}(MSG, ...);
+//FUNC FltfLogError{LEVEL=TRACE_LEVEL_ERROR, FLAGS=TRACE_FLAG_FILE_FILTER}(MSG, ...);
+//FUNC FltfLogCritical{LEVEL=TRACE_LEVEL_CRITICAL, FLAGS = TRACE_FLAG_FILE_FILTER}(MSG, ...);
+
+
+
+// end_wpp
+
+#endif//_TRACE_H_

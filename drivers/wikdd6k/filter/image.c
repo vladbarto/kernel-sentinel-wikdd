@@ -1,8 +1,6 @@
-#include <ntstrsafe.h>
-
 #include "..\include\filter\utils.h"
 #include "..\include\filter\image.h"
-
+#include "image.tmh"
 VOID
 ImageLoadNotifyRoutine(
     _In_opt_ PUNICODE_STRING FullImageName,
@@ -27,7 +25,7 @@ ImageLoadNotifyRoutine(
     );
 
     if (!ctx) {
-        LogError(L"Failed to allocate notification work context");
+        DrvLogError(L"Failed to allocate notification work context");
         return;
     }
     RtlZeroMemory(ctx, sizeof(MY_CONTEXT));
@@ -37,7 +35,7 @@ ImageLoadNotifyRoutine(
         status = GetImagePathFromPid(ProcessId, &pProcessPath);
         if (!NT_SUCCESS(status))
         {
-            LogError("GetCurrentProcessImagePath failed with status 0x%X\n", status);
+            DrvLogError("GetCurrentProcessImagePath failed with status 0x%X\n", status);
             __leave;
         }
 
@@ -73,7 +71,7 @@ ImageLoadNotifyRoutine(
         RtlStringCbPrintfW(
             ctx->Details,
             sizeof(ctx->Details),
-            L"ImageBase: 0x%p, ImageSize: 0x%X",
+            L"ImageBase: 0x%p, ImageSize: 0x%IX",
             ImageInfo->ImageBase,
             ImageInfo->ImageSize
         );
@@ -81,11 +79,11 @@ ImageLoadNotifyRoutine(
         // Enqueue work item; let the KM ThreadPool deal with it
         status = TpEnqueueWorkItem(&gDrv.ThreadPool, MyWorkItemRoutine, ctx);
         if (NT_NOT_SUCCESS(status)) {
-            LogError(L"TpEnqueueWorkItem failed with 0x%X", status);
+            DrvLogError(L"TpEnqueueWorkItem failed with 0x%X", status);
         }
         
 
-        WikddLogInfo("Image Notification for process %wZ. Path = %wZ", pProcessPath, FullImageName);
+        DrvLogError("Image Notification for process %wZ. Path = %wZ", pProcessPath, FullImageName);
     }
     __finally
     {

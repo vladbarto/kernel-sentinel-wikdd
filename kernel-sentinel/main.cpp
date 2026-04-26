@@ -9,7 +9,7 @@
 #include "driver-caller.h"
 #include "main.tmh"
 
-NTSTATUS
+int
 main()
 {
     InitializeLogging(L"Z:\\driver_notifications.log");

@@ -1,6 +1,6 @@
 #pragma once
-#pragma once
 //
+//   Kernel Mode
 //   Author(s)    : Radu PORTASE(rportase@bitdefender.com)
 //
 
@@ -12,6 +12,7 @@
 #include <fltUser.h>
 #include "global_data.h"
 #else
+#include "..\trace.h"
 #include <fltKernel.h>
 #endif
 
@@ -54,7 +55,7 @@ typedef enum _MY_DRIVER_COMMAND_NOTIFICATION_TYPE_CODE
     commImageFilter     = 0x04,
     commRegistryFilter  = 0x08,
     commFileFilter      = 0x10,
-    commAll             = 0x1Fi
+    commAll             = 0x1F
 } MY_DRIVER_COMMAND_NOTIFICATION_TYPE_CODE, * PMY_DRIVER_COMMAND_NOTIFICATION_TYPE_CODE;
 
 

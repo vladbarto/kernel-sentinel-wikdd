@@ -5,7 +5,8 @@
 //                : Vlad-Alexandru BARTOLOMEI (vlad.bartolomei@outlook.com)
 //
 
-#include "include\threadpool.h"
+#include "include\my_driver.h"
+#include "threadpool.tmh"
 
 VOID
 GetTimestampString(
@@ -15,7 +16,7 @@ GetTimestampString(
 {
     LARGE_INTEGER systemTime, localTime;
     TIME_FIELDS timeFields;
-    WCHAR dateString[64];
+    //WCHAR dateString[64];
 
     KeQuerySystemTime(&systemTime);
     ExSystemTimeToLocalTime(&systemTime, &localTime);
@@ -64,7 +65,7 @@ MyWorkItemRoutine(
     NTSTATUS status = RtlStringCbPrintfW(
         LogBuffer,
         sizeof(LogBuffer),
-        L"%s[%s][%u][%wZ][%0x%X][%s]",
+        L"[%s][%s][%u][%wZ][%wZ][%d][%s]",
         timestamp,
         OperationName,
         ctx->ProcessId,
@@ -86,7 +87,7 @@ MyWorkItemRoutine(
 
         if (NT_NOT_SUCCESS(status))
         {
-            LogError(L"CommSendString failed with 0x%X", status);
+            DrvLogError(L"CommSendString failed with 0x%X", status);
         }
     }
 

@@ -2,7 +2,7 @@
 //   Author(s)    : Radu PORTASE(rportase@bitdefender.com)
 //                  Vlad-Alexandru BARTOLOMEI(vlad.bartolomei@outlook.com)
 //
-
+#pragma comment(lib, "FltLib.lib")
 #include "communication\driver_communication.h"
 #include "global_data.h"
 #include <fltUser.h>
@@ -10,6 +10,8 @@
 #include "communication\driver_commands.h"
 #include "communication\message_handlers.h"
 #include <malloc.h>
+
+APP_GLOBAL_DATA gApp;
 
 #pragma region Message handling
 

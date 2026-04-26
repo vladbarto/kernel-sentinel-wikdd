@@ -1,8 +1,8 @@
 #pragma once
-#include <ntifs.h>
-#include <ntstrsafe.h>
-#include "communication.h"
+
 #include "communication_protocol.h"
+#include "communication.h"
+#include <ntstrsafe.h>
 
 #define MAX_NUMBER_THREADS 5
 //

@@ -80,7 +80,7 @@ MsgHandleSendString(
         return STATUS_SUCCESS;
     }
 
-    PWCHAR message = malloc(pInput->Message.StringLengthInBytes + sizeof(WCHAR));
+    PWCHAR message = (PWCHAR)malloc(pInput->Message.StringLengthInBytes + sizeof(WCHAR));
     if (!message)
     {
         wprintf(L"[ERROR] BAD_ALLOC\n");

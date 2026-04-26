@@ -1,7 +1,6 @@
-#include <ntstrsafe.h>
 #include "..\include\filter\utils.h"
 #include "..\include\filter\registry.h"
-
+#include "registry.tmh"
 //
 // Registry notification
 //
@@ -255,11 +254,11 @@ CmRegistryCallback(
         status = CmCallbackGetKeyObjectIDEx(&gDrv.RegistryCookie, object, &objectId, &objectName, 0);
         if (!NT_SUCCESS(status))
         {
-            LogError("CmCallbackGetKeyObjectIDEx failed with status = 0x%X\n", status);
+            DrvLogError("CmCallbackGetKeyObjectIDEx failed with status = 0x%X\n", status);
         }
         else
         {
-            LogInfo("Key: %wZ\n", objectName);
+            DrvLogError("Key: %wZ\n", objectName);
             CmCallbackReleaseKeyObjectIDEx(objectName);
         }
     }

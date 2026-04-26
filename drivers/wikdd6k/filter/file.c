@@ -1,7 +1,6 @@
-#include <ntstrsafe.h>
 #include "..\include\filter\utils.h"
 #include "..\include\filter\file.h"
-
+#include "file.tmh"
 //
 // Functions to deal with instance management
 //
@@ -20,7 +19,7 @@ OnInstanceSetup(
 
     PAGED_CODE();
 
-    LogInfo("MyFilter!MyFilterInstanceSetup: Entered");
+    DrvLogError("MyFilter!MyFilterInstanceSetup: Entered");
 
     return STATUS_SUCCESS;
 }
@@ -37,7 +36,7 @@ OnQueryTeardown(
 
     PAGED_CODE();
 
-    LogInfo("MyFilter!MyFilterInstanceQueryTeardown: Entered");
+    DrvLogError("MyFilter!MyFilterInstanceQueryTeardown: Entered");
 
     return STATUS_SUCCESS;
 }
@@ -54,7 +53,7 @@ OnInstanceTeardownStart(
 
     PAGED_CODE();
 
-    LogInfo("MyFilter!MyFilterInstanceTeardownStart: Entered");
+    DrvLogError("MyFilter!MyFilterInstanceTeardownStart: Entered");
 }
 
 
@@ -69,7 +68,7 @@ OnInstanceTeardownComplete(
 
     PAGED_CODE();
 
-    LogInfo("MyFilter!MyFilterInstanceTeardownComplete: Entered");
+    DrvLogError("MyFilter!MyFilterInstanceTeardownComplete: Entered");
 }
 
 //
@@ -89,7 +88,7 @@ MyFilterPreOperation(
 
     if (gDrv.MonitoringStarted)
     {
-        LogInfo("MyFilter!MyFilterPreOperation: Entered. Pid = 0x%X",
+        DrvLogError("MyFilter!MyFilterPreOperation: Entered. Pid = 0x%X",
             HandleToUlong(FltGetRequestorProcessIdEx(Data)));
     }
     return FLT_PREOP_SUCCESS_WITH_CALLBACK;
@@ -108,7 +107,7 @@ MyFilterPreOperationSynchronize(
 
     if (gDrv.MonitoringStarted)
     {
-        LogInfo("MyFilter!MyFilterPreOperationSynchronize: Entered. Pid = 0x%X",
+        DrvLogError("MyFilter!MyFilterPreOperationSynchronize: Entered. Pid = 0x%X",
             HandleToUlong(FltGetRequestorProcessIdEx(Data)));
     }
     return FLT_PREOP_SYNCHRONIZE;
@@ -130,7 +129,7 @@ MyFilterPostOperation(
 
     if (gDrv.MonitoringStarted)
     {
-        LogInfo("MyFilter!MyFilterPostOperation: Entered. Pid = 0x%X",
+        DrvLogInfo("MyFilter!MyFilterPostOperation: Entered. Pid = 0x%X",
             HandleToUlong(FltGetRequestorProcessIdEx(Data)));
     }
 
@@ -151,7 +150,7 @@ MyFilterPreOperationNoPostOperation(
 
     if (gDrv.MonitoringStarted)
     {
-        LogInfo("MyFilter!MyFilterPreOperationNoPostOperation: Entered");
+        DrvLogError("MyFilter!MyFilterPreOperationNoPostOperation: Entered");
     }
 
     return FLT_PREOP_SUCCESS_NO_CALLBACK;

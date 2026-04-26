@@ -1,6 +1,6 @@
 #pragma once
-#pragma once
 //
+//   User Mode
 //   Author(s)    : Radu PORTASE(rportase@bitdefender.com)
 //
 
@@ -118,12 +118,15 @@ typedef struct _MY_DRIVER_MESSAGE_HEADER
     MY_DRIVER_MESSAGE_CODE MessageCode;
 } MY_DRIVER_MESSAGE_HEADER, * PMY_DRIVER_MESSAGE_HEADER;
 
+#pragma warning(push)
+#pragma warning(disable:4200)
 typedef struct _MY_DRIVER_MESSAGE_SEND_STRING
 {
     MY_DRIVER_MESSAGE_HEADER Header;
     ULONG32 StringLengthInBytes;
     char  Data[0];
 } MY_DRIVER_MESSAGE_SEND_STRING, * PMY_DRIVER_MESSAGE_SEND_STRING;
+#pragma warning(pop)
 
 typedef struct _MY_DRIVER_SEND_STRING_REPLY
 {

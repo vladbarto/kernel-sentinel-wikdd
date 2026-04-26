@@ -1,6 +1,7 @@
 #include "include\my_driver.h"
-#include "include\communication.h"
 #include "include\communication_protocol.h"
+#include "include\communication.h"
+#include "communication.tmh"
 
 #pragma region FLT_PORT Commands
 /*++
@@ -43,7 +44,7 @@ HccpNotImplementedOrInvalidCommandCode(
     UNREFERENCED_PARAMETER(OutputBufferLength);
     UNREFERENCED_PARAMETER(BytesWritten);
 
-    LogError(L"Command %u is not implemented.", pHeader->CommandCode);
+    DrvLogError(L"Command %u is not implemented.", pHeader->CommandCode);
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -106,7 +107,7 @@ HccpStartMonitoring(
     gDrv.MonitoringStarted = 1;
     gDrv.MonitoringFlags |= pCmd->Header.NotificationType; // Activez fix bitul de care am nevoie cu Logic OR
 
-    LogTrace(L"Monitoring Started for type: %u", gDrv.MonitoringFlags);
+    DrvLogError(L"Monitoring Started for type: %u", gDrv.MonitoringFlags);
 
     *BytesWritten = 0;
     
@@ -136,7 +137,7 @@ HccpStopMonitoring(
     gDrv.MonitoringStarted = 0;
     gDrv.MonitoringFlags &= ~(pCmd->Header.NotificationType); // Sterg fix bitul pe care il vreau de fiecare data (mergea si cu XOR value, dar doar prima data)
 
-    LogTrace(L"Monitoring Stopped for type: %u", gDrv.MonitoringFlags);
+    DrvLogError(L"Monitoring Stopped for type: %u", gDrv.MonitoringFlags);
 
     *BytesWritten = 0;
     
@@ -324,7 +325,7 @@ CommpCoreCallbackMessageReceived(
         // Select the command handler from our list of command handlers
         //
         pCommandHeader = (PMY_DRIVER_COMMAND_HEADER)InputBuffer;
-        LogTrace(L"Received command with code 0x%X (%u) from user mode.\n", pCommandHeader->CommandCode, pCommandHeader->CommandCode);
+        DrvLogError(L"Received command with code 0x%X (%u) from user mode.\n", pCommandHeader->CommandCode, pCommandHeader->CommandCode);
         switch (pCommandHeader->CommandCode)
         {
         case commGetVersion:
@@ -346,13 +347,13 @@ CommpCoreCallbackMessageReceived(
 
     if (NT_SUCCESS(status))
     {
-        LogTrace(L"Command successfully handled\n");
+        DrvLogError(L"Command successfully handled\n");
         // success. We return the results to the caller
         *ReturnOutputBufferLength = ulBytesWritten;
     }
     else
     {
-        LogTrace(L"Handling command failed with status = 0x%X\n", status);
+        DrvLogError(L"Handling command failed with status = 0x%X\n", status);
         // fail. Zero the buffers
         if (NULL != OutputBuffer)
         {
@@ -488,7 +489,7 @@ CommSendMessage(
     FltAcquirePushLockShared(&gDrv.Communication.Lock);
     __try
     {
-        WikddLogTrace("Sending message to app. Input: 0x%p size %u Output: 0x%p size 0x%u",
+        DrvLogError("Sending message to app. Input: 0x%p size %u Output: 0x%p size 0x%u",
             InputBuffer, InputBufferSize, OutputBuffer, *OutputBufferSize);
 
         status = FltSendMessage(gDrv.FilterHandle,
@@ -500,7 +501,7 @@ CommSendMessage(
             &timeout);
         if (!NT_SUCCESS(status))
         {
-            WikddLogError("FltSendMessage failed with status 0x%X", status);
+            DrvLogError("FltSendMessage failed with status 0x%X", status);
             // not success
             __leave;
         }
@@ -547,7 +548,7 @@ CommSendString(
     NTSTATUS status = CommSendMessage(pMsg, msgSize, &reply, &replySize);
     if (!NT_SUCCESS(status))
     {
-        WikddLogError("CommSendMessage failed with status = 0x%X", status);
+        DrvLogError("CommSendMessage failed with status = 0x%X", status);
     }
 
     ExFreePoolWithTag(pMsg, 'GSM+');

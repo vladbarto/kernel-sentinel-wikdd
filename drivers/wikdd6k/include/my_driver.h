@@ -33,7 +33,7 @@ typedef struct _GLOBAL_DATA
 
     MY_THREAD_POOL ThreadPool;
     PFUNC_ZwQueryInformationProcess pfnZwQueryInformationProcess;
-}GLOBAL_DATA, * PGLOBAL_DATA;
+} GLOBAL_DATA, * PGLOBAL_DATA;
 
 extern GLOBAL_DATA gDrv;
 
