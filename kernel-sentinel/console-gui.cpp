@@ -233,8 +233,9 @@ NTSTATUS
 FirstPosition(_In_ PCHAR word, _In_ BYTE argc)
 {
     char sentinel[] = "sentinel";
-    char help[] = "help";
-    char exit[] = "exit";
+    char help[]     = "help";
+    char version[]  = "version";
+    char exit[]     = "exit";
 
     if (NT_SUCCESS(CompareStrings(word, sentinel)))
     {
@@ -252,6 +253,11 @@ FirstPosition(_In_ PCHAR word, _In_ BYTE argc)
         return STATUS_SUCCESS;
     }
 
+    if (NT_SUCCESS(CompareStrings(word, version))) {
+        ULONG DriverVersion = 0;
+        return CmdGetDriverVersion(&DriverVersion);
+    }
+
     if (NT_SUCCESS(CompareStrings(word, exit))) {
         printf("Process is exiting normally...\r\n");
         return STATUS_UNSUCCESSFUL;
@@ -264,15 +270,8 @@ FirstPosition(_In_ PCHAR word, _In_ BYTE argc)
 NTSTATUS
 SecondPosition(_In_ PCHAR word, _In_ BYTE argc)
 {
-    char version[] = "version";
     char start_filter[] = "start_filter";
     char stop_filter[] = "stop_filter";
-    
-    if (NT_SUCCESS(CompareStrings(word, version))) {
-        PULONG OutDriverVersion = (PULONG) malloc (sizeof(ULONG));
-        CmdGetDriverVersion(OutDriverVersion);
-        return STATUS_SUCCESS;
-    }
 
     if (NT_SUCCESS(CompareStrings(word, start_filter))) {
         if (argc != MAX_ARGUMENTS)
@@ -294,12 +293,12 @@ SecondPosition(_In_ PCHAR word, _In_ BYTE argc)
             return STATUS_SUCCESS;
     }
 
-    printf("Unknown argument. Exiting process\r\n");
+    printf("Unknown argument: %s. Exiting process\r\n", word);
     return STATUS_INVALID_PARAMETER;
 }
 
 NTSTATUS
-ThirdPosition(_In_ PCHAR word)
+ThirdPosition(_In_ PCHAR word, _In_ PCHAR secondArg)
 {
     char process[] = "process";
     char thread[] = "thread";
@@ -307,28 +306,43 @@ ThirdPosition(_In_ PCHAR word)
     char registry[] = "registry";
     char file[] = "file";
 
-    if (NT_SUCCESS(CompareStrings(word, process))) {
-        CmdStartMonitoring(commProcessFilter); // trebe scoasa logica in afara for-ului
+    char start_filter[] = "start_filter";
+    char stop_filter[] = "stop_filter";
 
-        return STATUS_SUCCESS;
+    MY_DRIVER_COMMAND_NOTIFICATION_TYPE_CODE notificationType = commNone;
+
+    if (NT_SUCCESS(CompareStrings(word, process))) {
+        notificationType = commProcessFilter;
     }
 
     if (NT_SUCCESS(CompareStrings(word, thread))) {
-        return STATUS_SUCCESS;
+        notificationType = commThreadFilter;
     }
 
     if (NT_SUCCESS(CompareStrings(word, image))) {
-        return STATUS_SUCCESS;
+        notificationType = commImageFilter;
     }
 
     if (NT_SUCCESS(CompareStrings(word, registry))) {
-        return STATUS_SUCCESS;
+        notificationType = commRegistryFilter;
     }
 
     if (NT_SUCCESS(CompareStrings(word, file))) {
-        return STATUS_SUCCESS;
+        notificationType = commFileFilter;
     }
 
+    if (NT_SUCCESS(CompareStrings(secondArg, start_filter))) {
+        NTSTATUS status = CmdStartMonitoring(notificationType);
+        if (NT_SUCCESS(status)) {
+            printf("Started monitoring: %s\r\n", word);
+        }
+    }
+    else if (NT_SUCCESS(CompareStrings(secondArg, stop_filter))) {
+        NTSTATUS status = CmdStopMonitoring(notificationType);
+        if (NT_SUCCESS(status)) {
+            printf("Stopped monitoring : % s\r\n", word);
+        }
+    }
     printf("Unknown argument. Exiting process\r\n");
     return STATUS_INVALID_PARAMETER;
 }
@@ -340,14 +354,27 @@ RunKernelSentinelFeatures()
     char *commandLine = (char*) malloc (bufferSize * sizeof(char));
     NTSTATUS status = STATUS_SUCCESS;
     printf("Kernel sentinel tool\r\n");
-    while (true) {
+
+    // Starting filter driver communication
+    CommDriverPreinitialize();
+    status = CommDriverInitialize();
+    if (status < 0)
+    {
+        free(commandLine);
+        return status;
+    }
+
+    BOOLEAN bExit = FALSE;
+
+    while (!bExit) {
         printf("$ ");
         memset(commandLine, 0, sizeof(char) * bufferSize);
         status = ReadLine(commandLine, bufferSize);
         if (!NT_SUCCESS(status)) {
             printf("Error occured when reading command from line. Exiting process...\r\n");
             free(commandLine);
-            return STATUS_UNSUCCESSFUL;
+            status = STATUS_UNSUCCESSFUL;
+            break;
         }
 
         char* next_token = NULL;
@@ -362,14 +389,6 @@ RunKernelSentinelFeatures()
             word = strtok_s(NULL, delimiter, &next_token);
         }
 
-        // Starting filter driver communication
-        CommDriverPreinitialize();
-        NTSTATUS status = CommDriverInitialize();
-        if (status < 0)
-        {
-            return status;
-        }
-
         // Interpreting the user command
         for (BYTE i = 0; i < Position; i++) {
             //printf("[%s]\n", argv[i]);
@@ -377,25 +396,40 @@ RunKernelSentinelFeatures()
             case 0:
                 status = FirstPosition(argv[i], Position);
                 if (!NT_SUCCESS(status))
-                    return STATUS_INVALID_PARAMETER_1;
+                {
+                    status = STATUS_INVALID_PARAMETER_1;
+                    bExit = TRUE;
+                }
                 break;
             case 1:
                 status = SecondPosition(argv[i], Position);
                 if (!NT_SUCCESS(status))
-                    return STATUS_INVALID_PARAMETER_2;
+                {
+                    status = STATUS_INVALID_PARAMETER_2;
+                    bExit = TRUE;
+                }
                 break;
             case 2:
-                status = ThirdPosition(argv[i]); // Calling will launch request to KM
+                status = ThirdPosition(argv[i], argv[i-1]); // Calling will launch request to KM
                 if (!NT_SUCCESS(status))
-                    return STATUS_INVALID_PARAMETER_3;
+                {
+                    status = STATUS_INVALID_PARAMETER_3;
+                    bExit = TRUE;
+                }
                 break;
             default: printf("[%s]\n", word);
             }
         }
 
-        // Ending the driver communication with the filter
-        CommDriverUninitialize();
+        if (!NT_SUCCESS(status)) {
+            bExit = TRUE;
+        }
+
+        
     }
 
-    return 0;
+    // Ending the driver communication with the filter
+    CommDriverUninitialize();
+    free(commandLine);
+    return status;
 }

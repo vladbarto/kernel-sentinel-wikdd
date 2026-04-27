@@ -19,6 +19,8 @@ CmdGetDriverVersion(
     DWORD dwBytesReturned = 0;
     HRESULT result = S_FALSE;
 
+    *DriverVersion = 0;
+
     __try
     {
         //

@@ -12,7 +12,7 @@
 int
 main()
 {
-    InitializeLogging(L"Z:\\driver_notifications.log");
+    InitializeLogging(L"C:\\wkdd\\driver_notifications.log");
 
     //return RunLegacyDriverFeatures();
     NTSTATUS status = RunKernelSentinelFeatures();
