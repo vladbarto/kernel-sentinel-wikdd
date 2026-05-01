@@ -22,4 +22,5 @@
 #include <strsafe.h>
 #include <iostream>
 
+#define NT_NOT_SUCCESS(status) !NT_SUCCESS(status)
 //#include "dynamic-load-library.h"
