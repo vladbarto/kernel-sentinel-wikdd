@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx;*</Extensions>
+      <UniqueIdentifier>{C7B744F5-D8E3-44AF-B03B-3F3CD4420654}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <UniqueIdentifier>{FC5D5051-223C-4C4F-83DF-26C02D84A949}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms;man;xml</Extensions>
+      <UniqueIdentifier>{C06B2AEB-030A-415F-9470-EAE415E74AAC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Driver Files">
+      <Extensions>inf;inv;inx;mof;mc;</Extensions>
+      <UniqueIdentifier>{34BC5A6E-3317-4C17-B297-7E2C99187FBC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\filter">
+      <UniqueIdentifier>{8aaac4b7-75d5-4280-8ecb-9cc662869078}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include">
+      <UniqueIdentifier>{11ce9596-4591-4d6b-8d78-31a6b2b4995d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include\filter_header">
+      <UniqueIdentifier>{2734446e-ec15-492d-90f6-c9dfe7ac8968}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="swapBuffers.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="firewall_km.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="communication.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="threadpool.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wikdd6k.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\file.c">
+      <Filter>Source Files\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\image.c">
+      <Filter>Source Files\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\process.c">
+      <Filter>Source Files\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\registry.c">
+      <Filter>Source Files\filter</Filter>
+    </ClCompile>
+    <ClCompile Include="filter\thread.c">
+      <Filter>Source Files\filter</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="swapBuffers.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="wikdd6k.inf">
+      <Filter>Driver Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\communication.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\communication_protocol.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\my_driver.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threadpool.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\file.h">
+      <Filter>Header Files\include\filter_header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\image.h">
+      <Filter>Header Files\include\filter_header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\process.h">
+      <Filter>Header Files\include\filter_header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\registry.h">
+      <Filter>Header Files\include\filter_header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\thread.h">
+      <Filter>Header Files\include\filter_header</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\utils.h">
+      <Filter>Header Files\include\filter_header</Filter>
+    </ClInclude>
+    <ClInclude Include="trace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
