@@ -1,6 +1,7 @@
 //
 //   Copyright (C) 2018 BitDefender S.R.L.
-//   Author(s)    : Radu PORTASE(rportase@bitdefender.com)
+//   Author(s)    : Andrei-Marius MUNTEA(amuntea@bitdefender.com)
+//                  Vlad BARTOLOMEI (vlad.bartolomei@outlook.com)
 //
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdlib.h>
@@ -8,7 +9,7 @@
 #include <Ws2tcpip.h>
 #include <fwpmu.h>
 #include <malloc.h>
-
+#include <vector>
 
 #pragma comment (lib, "Fwpuclnt.lib")
 #pragma comment (lib, "Ws2_32.lib")
@@ -29,20 +30,33 @@ void PrintHelp(char* ExecutableName)
     printf("	del <filter-id>\n");
 }
 
+/*
+ * We will go for the bonus (Servus Andrei ^^) as well. Approach:
+ * 1. create a allowConditions array and a allowFilter
+ * 2. set priority or weight higher than the one we'll also set for deny filter. We want first to have allow filter
+ * 3. create a denyConditions array and a denyFilter
+ * 
+ */
 DWORD AddRule(HANDLE hEngine, wchar_t* Process, wchar_t* Domain)
 {
     DWORD error = 0;
-    FWPM_FILTER filter = { 0 };
-    FWPM_FILTER_CONDITION conditions[4] = { 0 };
-    FWP_V4_ADDR_AND_MASK addrAndMask = { 0 };
+    FWPM_FILTER allowFilter = { 0 };
+    FWPM_FILTER denyFilter = { 0 };
+    FWPM_FILTER_CONDITION allowConditions[2] = { 0 };
+    FWPM_FILTER_CONDITION denyConditions[1] = { 0 };
+    FWP_V4_ADDR_AND_MASK* addrAndMask;
     FWP_BYTE_BLOB* pAppId = NULL;
     ADDRINFOW getAddrHints = { 0 };
     ADDRINFOW* plIpAddrInfo = NULL;
     struct sockaddr_in* pSockAddr = NULL;
     DWORD ipAddress = 0;
+    ADDRINFOW* currentAddr = NULL;
+
+    /* Filter IDs vector to be able to delete filters at the end*/
+    std::vector<UINT64> filterIDs;
 
     /* Translate the full file name to the app id.*/
-    /* Example: "C:\Program Files\Mozilla Firefox\firefox.exe" to <unique id> */
+    /* Example: "C:\Program Files\Google\Chrome\Application\chrome.exe" to <unique id> */
     error = FwpmGetAppIdFromFileName(Process, &pAppId);
     if (ERROR_SUCCESS != error)
     {
@@ -55,10 +69,12 @@ DWORD AddRule(HANDLE hEngine, wchar_t* Process, wchar_t* Domain)
     /* Example: ro.wikipedia.org to 185.15.59.224. */
     memset(&getAddrHints, 0, sizeof(ADDRINFOW));
     getAddrHints.ai_family = AF_INET;
-    error = GetAddrInfoW(Domain,
+    error = GetAddrInfoW (
+        Domain,
         NULL,
         &getAddrHints,
-        &plIpAddrInfo);
+        &plIpAddrInfo
+    );
     if (0 != error || AF_INET != plIpAddrInfo->ai_family)
     {
         printf("GetAddrInfoW returned: %d!\n", error);
@@ -66,43 +82,94 @@ DWORD AddRule(HANDLE hEngine, wchar_t* Process, wchar_t* Domain)
         goto cleanup;
     }
 
-    /* We need to convert from network to host byte ordering. */
-    pSockAddr = (struct sockaddr_in*)plIpAddrInfo->ai_addr;
-    ipAddress = ntohl(pSockAddr->sin_addr.S_un.S_addr);
-    printf("IP: %d.%d.%d.%d\n",
-        ipAddress >> 24,
-        (ipAddress & 0x00FF0000) >> 16,
-        (ipAddress & 0x0000FF00) >> 8,
-        (ipAddress & 0x000000FF));
+    currentAddr = plIpAddrInfo;
 
-    /* We'll create a blocking condition. */
-    /* First rule is to block by APP ID - we want to deny firefox.exe access. */
-    /* We converted firefox.exe to APP ID above - so the first condition is for the process to match the app id.*/
-    ZeroMemory(&conditions[0], sizeof(FWPM_FILTER_CONDITION));
-    conditions[0].fieldKey = FWPM_CONDITION_ALE_APP_ID;
-    conditions[0].matchType = FWP_MATCH_EQUAL;
-    conditions[0].conditionValue.type = FWP_BYTE_BLOB_TYPE;
-    conditions[0].conditionValue.byteBlob = pAppId;
-
-    printf("Domain %ws not blocked. This is your homework :).\n", Domain);
-
-    /* Now we have the blocking condition (firefox will not be allowed access to wikipedia) */
-    /* Now we need to add a filter to the connect layer to describe these two conditions. */
-    /* The display name will be accessible by domain (so in our example "wikipedia") - you can use list to enumerate and find it.*/
-    ZeroMemory(&filter, sizeof(FWPM_FILTER));
-    filter.displayData.name = Domain;
-    filter.displayData.description = NULL;
-    filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
-    filter.weight.type = FWP_EMPTY;
-    filter.numFilterConditions = 1;
-    filter.filterCondition = conditions;
-    filter.action.type = FWP_ACTION_BLOCK;
-
-    error = FwpmFilterAdd(hEngine, &filter, NULL, NULL);
-    if (ERROR_SUCCESS != error)
+    /* Why? Well we have more addresses for ro.wikipedia.org */
+    while (currentAddr != NULL)
     {
-        printf("FwpmFilterAdd returned: %d!\n", error);
+        /* We need to convert from network to host byte ordering. */
+        pSockAddr = (struct sockaddr_in*)currentAddr->ai_addr;
+        ipAddress = ntohl(pSockAddr->sin_addr.S_un.S_addr);
+        printf("IP: %d.%d.%d.%d\n",
+            ipAddress >> 24,
+            (ipAddress & 0x00FF0000) >> 16,
+            (ipAddress & 0x0000FF00) >> 8,
+            (ipAddress & 0x000000FF));
+
+        addrAndMask = (FWP_V4_ADDR_AND_MASK*)malloc(sizeof(FWP_V4_ADDR_AND_MASK));
+        ZeroMemory(addrAndMask, sizeof(FWP_V4_ADDR_AND_MASK));
+
+        addrAndMask->addr = ipAddress;
+        addrAndMask->mask = 0xFFFFFFFF;
+
+        /* We'll create an allowing condition. */
+        /* First rule is to allow by APP ID - we want to allow chrome.exe access. */
+        /* We converted firefox.exe to APP ID above - so the first condition is for the process to match the app id.*/
+        ZeroMemory(&allowConditions[0], sizeof(FWPM_FILTER_CONDITION));
+        allowConditions[0].fieldKey = FWPM_CONDITION_ALE_APP_ID;
+        allowConditions[0].matchType = FWP_MATCH_EQUAL;
+        allowConditions[0].conditionValue.type = FWP_BYTE_BLOB_TYPE;
+        allowConditions[0].conditionValue.byteBlob = pAppId;
+
+        ZeroMemory(&allowConditions[1], sizeof(FWPM_FILTER_CONDITION));
+        allowConditions[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
+        allowConditions[1].matchType = FWP_MATCH_EQUAL;
+        allowConditions[1].conditionValue.type = FWP_V4_ADDR_MASK;
+        allowConditions[1].conditionValue.v4AddrMask = addrAndMask;
+        printf("Domain %ws was blocked. This is my homework done ^^.\n", Domain);
+
+        /* Now we have the allowing condition (chrome will be allowed access to wikipedia) */
+        /* Now we need to add a filter to the connect layer to describe these two conditions. */
+        /* The display name will be accessible by domain (so in our example "wikipedia") - you can use list to enumerate and find it.*/
+        ZeroMemory(&allowFilter, sizeof(FWPM_FILTER));
+        allowFilter.displayData.name = Domain;
+        allowFilter.displayData.description = NULL;
+        allowFilter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+        allowFilter.numFilterConditions = 2;
+        allowFilter.filterCondition = allowConditions;
+        allowFilter.action.type = FWP_ACTION_PERMIT;
+        allowFilter.weight.type = FWP_UINT8;
+        allowFilter.weight.uint8 = 2; // Higher priority; MSDN: For UINT8, priority in [0, 15] HUH? ok Microsoft
+
+        /* Ok now allowing filter is prepared, coming up next is the denying filter.*/
+        ZeroMemory(&denyConditions[0], sizeof(FWPM_FILTER_CONDITION));
+        denyConditions[0].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
+        denyConditions[0].matchType = FWP_MATCH_EQUAL;
+        denyConditions[0].conditionValue.type = FWP_V4_ADDR_MASK;
+        denyConditions[0].conditionValue.v4AddrMask = addrAndMask;
+
+        ZeroMemory(&denyFilter, sizeof(FWPM_FILTER));
+        denyFilter.displayData.name = Domain;
+        denyFilter.displayData.description = NULL;
+        denyFilter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+        denyFilter.numFilterConditions = 1;
+        denyFilter.filterCondition = denyConditions;
+        denyFilter.action.type = FWP_ACTION_BLOCK;
+        denyFilter.weight.type = FWP_UINT8;
+        denyFilter.weight.uint8 = 1; // Higher priority
+
+        /* "Register" the filters*/
+        UINT64 allowFilterId = 0;
+        error = FwpmFilterAdd(hEngine, &allowFilter, NULL, &allowFilterId);
+        if (ERROR_SUCCESS != error)
+        {
+            printf("FwpmFilterAdd returned: %X!\n", error);
+            free(addrAndMask);
+        }
+        filterIDs.push_back(allowFilterId);
+
+        UINT64 denyFilterId = 0;
+        error = FwpmFilterAdd(hEngine, &denyFilter, NULL, &denyFilterId);
+        if (ERROR_SUCCESS != error)
+        {
+            printf("FwpmFilterAdd returned: %X!\n", error);
+            free(addrAndMask);
+        }
+        filterIDs.push_back(denyFilterId);
+
+        currentAddr = currentAddr->ai_next;
     }
+
 cleanup:
     if (NULL != pAppId)
     {
@@ -113,6 +180,18 @@ cleanup:
         FreeAddrInfoW(plIpAddrInfo);
         plIpAddrInfo = NULL;
     }
+
+    printf("Filter added succesfully. Test it! Now you can introduce any key to get rid of the rule.\r\n");
+    printf("Input: ");
+    int ch; 
+    while ((ch = getchar()) != '\n' && ch != EOF);
+    getchar();
+    while (!filterIDs.empty()) {
+        UINT64 popId = filterIDs.back();
+        FwpmFilterDeleteById(hEngine, popId);
+        filterIDs.pop_back();
+    }
+    
     return error;
 }
 
