@@ -125,6 +125,25 @@ CONST FLT_REGISTRATION FilterRegistration = {
     NULL                                //  NormalizeNameComponent
 };
 
+VOID
+DriverUnload(
+    _In_ PDRIVER_OBJECT DriverObject
+)
+{
+    UNREFERENCED_PARAMETER(DriverObject);
+
+    /* Unregister the network filter. */
+    DriverUnregisterNetworkFilter();
+
+    /* We no longer need the device object. */
+    if (NULL != gNetworkDeviceObject)
+    {
+        IoDeleteDevice(gNetworkDeviceObject);
+        gNetworkDeviceObject = NULL;
+    }
+}
+
+
 NTSTATUS
 DriverEntry(
     _In_ PDRIVER_OBJECT DriverObject,
@@ -143,6 +162,44 @@ DriverEntry(
     gDrv.Altitude = altitude;
     gDrv.MonitoringFlags = commNone;
     TpInit(&gDrv.ThreadPool, MAX_NUMBER_THREADS);
+
+    /*
+     * Intermezzo: Initialize Network filter: Start 
+     */
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+    /* Set unload routine. */
+    DriverObject->DriverUnload = DriverUnload;
+
+    /* Create the device for being associated with network filter. */
+    status = IoCreateDevice(
+        DriverObject,
+        0,
+        NULL,
+        FILE_DEVICE_NETWORK,
+        FILE_DEVICE_SECURE_OPEN,
+        FALSE,
+        &gNetworkDeviceObject
+    );
+    if (!NT_SUCCESS(status))
+    {
+        gNetworkDeviceObject = NULL;
+        return status;
+    }
+
+    /* Register the network filter callouts. */
+    status = DriverRegisterNetworkFilter();
+    if (!NT_SUCCESS(status))
+    {
+        IoDeleteDevice(gNetworkDeviceObject);
+        gNetworkDeviceObject = NULL;
+
+        return status;
+    }
+
+    /*
+     * Intermezzo: Initialize Network filter: End
+     */
 
     //
     // We will need ZwQueryInformationProcess for process names

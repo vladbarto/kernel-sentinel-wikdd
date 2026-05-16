@@ -1,6 +1,8 @@
 #pragma once
 #include "..\..\include\my_driver.h"
 
+static PDEVICE_OBJECT gNetworkDeviceObject = NULL;
+
 /*
 * First logical step: Register my network filter
 * I don't start building a house by destroying it (unregister) :>

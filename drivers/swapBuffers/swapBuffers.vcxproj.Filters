@@ -31,9 +31,6 @@
     <ClCompile Include="swapBuffers.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="firewall_km.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="communication.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -61,16 +58,14 @@
     <ClCompile Include="filter\thread.c">
       <Filter>Source Files\filter</Filter>
     </ClCompile>
+    <ClCompile Include="filter\network.c">
+      <Filter>Source Files\filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="swapBuffers.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="wikdd6k.inf">
-      <Filter>Driver Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\communication.h">
@@ -106,5 +101,16 @@
     <ClInclude Include="trace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="trace2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\filter\network.h">
+      <Filter>Header Files\include\filter_header</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="wikdd6k.inf">
+      <Filter>Driver Files</Filter>
+    </Inf>
   </ItemGroup>
 </Project>

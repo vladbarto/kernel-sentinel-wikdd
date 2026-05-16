@@ -190,7 +190,7 @@ DefaultDeleteFn(
 /// **************************************************************************************************
 ///
 
-static PDEVICE_OBJECT gNetworkDeviceObject = NULL;
+//static PDEVICE_OBJECT gNetworkDeviceObject = NULL; // moved to network.h
 static HANDLE gFilterEngine = NULL;
 
 /* {927E39F6 - E5F3 - 4ED6 - B4E0 - E63D0A01F704} */
