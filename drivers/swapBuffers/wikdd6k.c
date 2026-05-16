@@ -11,7 +11,7 @@
 #include "include\filter\image.h"
 #include "include\filter\registry.h"
 #include "include\filter\file.h"
-
+#include "include\filter\network.h"
 GLOBAL_DATA gDrv;
 
 //PFLT_FILTER gFilterRegistration = NULL;
