@@ -28,9 +28,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="swapBuffers.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="communication.c">
       <Filter>Source Files</Filter>
     </ClCompile>

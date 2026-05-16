@@ -13,6 +13,7 @@
 
 #include <wdm.h>
 #include <ip2string.h>
+#include "network.tmh"
 
 #define UINT_MAX 0xFFFFFFFF
 #define PROTOCOL_TCP 6
@@ -125,16 +126,81 @@ DefaultClassifyFn(
         &protocolIndex,
         &icmpIndex);
 
+    if (localAddressIndex == UINT_MAX) return;
+
+    PMY_CONTEXT ctx = (PMY_CONTEXT)ExAllocatePool2(
+        POOL_FLAG_NON_PAGED,
+        sizeof(MY_CONTEXT),
+        'FTON'
+    );
+
+    if (ctx == NULL) return;
+
+    /* Todo read docs and extract actual values :D be careful of ipv4/ipv6 */
+
+    RtlZeroMemory(ctx, sizeof(MY_CONTEXT));
+    KeInitializeSpinLock(&ctx->SpinLock);
+    ctx->Irql = PASSIVE_LEVEL;
+    ctx->ProcessId = inMetaValues->processId;
+    ctx->OperationResult = STATUS_SUCCESS; // default: allow
+    
+    switch (inFixedValues->layerId)
+    {
+    case FWPS_LAYER_ALE_AUTH_CONNECT_V4:
+        ctx->NotificationType = commNetworkConnectV4;
+        ctx->Data.Network.IsOutbound = TRUE;
+        ctx->Data.Network.IsIPv6 = FALSE;
+        break;
+    case FWPS_LAYER_ALE_AUTH_CONNECT_V6:
+        ctx->NotificationType = commNetworkConnectV6;
+        ctx->Data.Network.IsOutbound = TRUE;
+        ctx->Data.Network.IsIPv6 = TRUE;
+        break;
+    case FWPS_LAYER_ALE_AUTH_RECV_ACCEPT_V4:
+        ctx->NotificationType = commNetworkAcceptV4;
+        ctx->Data.Network.IsOutbound = FALSE;
+        ctx->Data.Network.IsIPv6 = FALSE;
+        break;
+    case FWPS_LAYER_ALE_AUTH_RECV_ACCEPT_V6:
+        ctx->NotificationType = commNetworkAcceptV6;
+        ctx->Data.Network.IsOutbound = FALSE;
+        ctx->Data.Network.IsIPv6 = TRUE;
+        break;
+    default:
+        ExFreePoolWithTag(ctx, 'FTON');
+        return;
+    }
+
     FWPS_INCOMING_VALUE* localAddress = &inFixedValues->incomingValue[localAddressIndex];
     FWPS_INCOMING_VALUE* localPort = &inFixedValues->incomingValue[localPortIndex];
     FWPS_INCOMING_VALUE* remoteAddress = &inFixedValues->incomingValue[remoteAddressIndex];
     FWPS_INCOMING_VALUE* remotePort = &inFixedValues->incomingValue[remotePortIndex];
+    FWPS_INCOMING_VALUE* protocol = &inFixedValues->incomingValue[protocolIndex];
 
-    /* Todo read docs and extract actual values :D be careful of ipv4/ipv6 */
-    UNREFERENCED_PARAMETER(localAddress);
-    UNREFERENCED_PARAMETER(localPort);
-    UNREFERENCED_PARAMETER(remoteAddress);
-    UNREFERENCED_PARAMETER(remotePort);
+    ctx->Data.Network.LayerId = inFixedValues->layerId;
+    ctx->Data.Network.Protocol = protocol->value.uint8;
+    ctx->Data.Network.LocalPort = localPort->value.uint16;
+    ctx->Data.Network.RemotePort = remotePort->value.uint16;
+    ctx->Data.Network.IcmpType = inFixedValues->incomingValue[icmpIndex].value.uint8;
+
+    if (!ctx->Data.Network.IsIPv6) {
+        // ipv4
+        ctx->Data.Network.Ipv4.LocalAddress = localAddress->value.uint32;
+        ctx->Data.Network.Ipv4.RemoteAddress = remoteAddress->value.uint32;
+    }
+    else
+    {
+        //ipv6
+        RtlCopyMemory(ctx->Data.Network.Ipv6.LocalAddress, localAddress->value.byteArray16->byteArray16, 16);
+        RtlCopyMemory(ctx->Data.Network.Ipv6.RemoteAddress, remoteAddress->value.byteArray16->byteArray16, 16);
+    }
+
+    // Enqueue work item; let the KM ThreadPool deal with it
+    NTSTATUS status = TpEnqueueWorkItem(&gDrv.ThreadPool, MyWorkItemRoutine, ctx);
+    if (NT_NOT_SUCCESS(status)) {
+        DrvLogError(L"TpEnqueueWorkItem failed with 0x%X", status);
+    }
+    
 
     /* To format an IPV4 address you can use something similar with the following snippet. Be carefult of IRQL and the ipv4/ipv6 :) This is for ipv4*/
     // {

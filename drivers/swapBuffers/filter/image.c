@@ -58,19 +58,19 @@ ImageLoadNotifyRoutine(
         // Copy image path
         if (FullImageName && FullImageName->Length > 0)
         {
-            ctx->TargetPath.Length = FullImageName->Length;
-            ctx->TargetPath.MaximumLength = FullImageName->MaximumLength;
-            ctx->TargetPath.Buffer = (PWCH)ExAllocatePoolWithTag(NonPagedPool, FullImageName->MaximumLength, UTILS_TAG_NOTIFICATION);
-            if(ctx->TargetPath.Buffer)
+            ctx->Data.MiniFilter.TargetPath.Length = FullImageName->Length;
+            ctx->Data.MiniFilter.TargetPath.MaximumLength = FullImageName->MaximumLength;
+            ctx->Data.MiniFilter.TargetPath.Buffer = (PWCH)ExAllocatePoolWithTag(NonPagedPool, FullImageName->MaximumLength, UTILS_TAG_NOTIFICATION);
+            if(ctx->Data.MiniFilter.TargetPath.Buffer)
             {
-                RtlCopyUnicodeString(&ctx->TargetPath, FullImageName);
+                RtlCopyUnicodeString(&ctx->Data.MiniFilter.TargetPath, FullImageName);
             }
         }
 
         // Details
         RtlStringCbPrintfW(
-            ctx->Details,
-            sizeof(ctx->Details),
+            ctx->Data.MiniFilter.Details,
+            sizeof(ctx->Data.MiniFilter.Details),
             L"ImageBase: 0x%p, ImageSize: 0x%IX",
             ImageInfo->ImageBase,
             ImageInfo->ImageSize
@@ -93,9 +93,9 @@ ImageLoadNotifyRoutine(
             {
                 ExFreePoolWithTag(ctx->ProcessName.Buffer, UTILS_TAG_NOTIFICATION);
             }
-            if (ctx->TargetPath.Buffer)
+            if (ctx->Data.MiniFilter.TargetPath.Buffer)
             {
-                ExFreePoolWithTag(ctx->TargetPath.Buffer, UTILS_TAG_NOTIFICATION);
+                ExFreePoolWithTag(ctx->Data.MiniFilter.TargetPath.Buffer, UTILS_TAG_NOTIFICATION);
             }
         }
 

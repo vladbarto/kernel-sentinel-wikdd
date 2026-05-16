@@ -113,7 +113,7 @@
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1;NDIS630</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
       <WppEnabled>true</WppEnabled>
@@ -157,7 +157,7 @@
     <ClCompile>
       <TreatWarningAsError>true</TreatWarningAsError>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1;NDIS630</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
     </ClCompile>
@@ -182,7 +182,6 @@
     <ClCompile Include="filter\process.c" />
     <ClCompile Include="filter\registry.c" />
     <ClCompile Include="filter\thread.c" />
-    <ClCompile Include="swapBuffers.c" />
     <ClCompile Include="threadpool.c" />
     <ClCompile Include="utils.c" />
     <ClCompile Include="wikdd6k.c" />

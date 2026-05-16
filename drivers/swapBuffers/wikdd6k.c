@@ -217,7 +217,7 @@ DriverEntry(
     //
     //  Register with FltMgr to tell it our callback routines
     //
-    NTSTATUS status = FltRegisterFilter(
+    status = FltRegisterFilter(
         DriverObject,
         &FilterRegistration,
         &gDrv.FilterHandle
@@ -241,6 +241,7 @@ DriverEntry(
             return status_init_comm_port;
         }
 
+        /* Why let some old code blow my new code? :>
         NTSTATUS status_init_proc_flt = ProcessFilterInitialize();
         if (NT_NOT_SUCCESS(status_init_proc_flt))
         {
@@ -277,7 +278,7 @@ DriverEntry(
             CommUninitializeFilterCommunicationPort();
             FltUnregisterFilter(gDrv.FilterHandle);
             return status_init_reg_flt;
-        }
+        }*/
 
 
         //
