@@ -49,13 +49,17 @@ typedef enum _MY_DRIVER_COMMAND_CODE
 //
 typedef enum _MY_DRIVER_COMMAND_NOTIFICATION_TYPE_CODE
 {
-    commNone            = 0x00,
-    commProcessFilter   = 0x01,
-    commThreadFilter    = 0x02,
-    commImageFilter     = 0x04,
-    commRegistryFilter  = 0x08,
-    commFileFilter      = 0x10,
-    commAll             = 0x1F
+    commNone             = 0x000,
+    commProcessFilter    = 0x001,
+    commThreadFilter     = 0x002,
+    commImageFilter      = 0x004,
+    commRegistryFilter   = 0x008,
+    commFileFilter       = 0x010,
+    commNetworkConnectV4 = 0x020,
+    commNetworkConnectV6 = 0x040,
+    commNetworkAcceptV4  = 0x080,
+    commNetworkAcceptV6  = 0x100,
+    commAll              = 0x1FF
 } MY_DRIVER_COMMAND_NOTIFICATION_TYPE_CODE, * PMY_DRIVER_COMMAND_NOTIFICATION_TYPE_CODE;
 
 

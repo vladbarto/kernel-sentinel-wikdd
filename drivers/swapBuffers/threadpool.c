@@ -38,13 +38,14 @@ GetTimestampString(
 /// Introduce a work routine (mirroring UM TestThreadPoolRoutine at the moment)
 NTSTATUS
 MyWorkItemRoutine(
-    _In_opt_ PVOID Context
+    _In_ PVOID Context,
+    _In_ KMUTEX TPMutex
 ) {
     PMY_CONTEXT ctx = (PMY_CONTEXT)Context;
     WCHAR LogBuffer[1024];
     UNICODE_STRING LogString = { 0 };
     PCWSTR OperationName = L"UNKNOWN";
-
+    NTSTATUS status;
     if (NULL == ctx)
     {
         return STATUS_INVALID_PARAMETER;
@@ -57,33 +58,115 @@ MyWorkItemRoutine(
     case commImageFilter: OperationName = L"IMAGE_LOAD"; break;
     case commRegistryFilter: OperationName = L"REGISTRY"; break;
     case commFileFilter: OperationName = L"FILE"; break;
+    case commNetworkConnectV4: OperationName = L"NET_CONNECT_V4"; break;
+    case commNetworkConnectV6: OperationName = L"NET_CONNECT_V6"; break;
+    case commNetworkAcceptV4: OperationName = L"NET_RECV_ACCEPT_V4"; break;
+    case commNetworkAcceptV6: OperationName = L"NET_RECV_ACCEPT_V6"; break;
     }
 
     WCHAR timestamp[64];
     GetTimestampString(timestamp, ARRAYSIZE(timestamp));
 
-    NTSTATUS status = RtlStringCbPrintfW(
-        LogBuffer,
-        sizeof(LogBuffer),
-        L"[%s][%s][%u][%wZ][%wZ][%d][%s]",
-        timestamp,
-        OperationName,
-        ctx->ProcessId,
-        &ctx->ProcessName,
-        &ctx->TargetPath,
-        ctx->OperationResult,
-        ctx->Details
-    );
+    if (ctx->NotificationType >= commNetworkConnectV4 &&
+        ctx->NotificationType <= commNetworkAcceptV6)
+    {
+        WCHAR localIpStr[64] = { 0 };
+        WCHAR remoteIpStr[64] = { 0 };
+        PCWSTR protocolStr = L"UNKNOWN";
+        PCWSTR directionStr = ctx->Data.Network.IsOutbound ? L"OUT" : L"IN";
+
+        if (ctx->Data.Network.Protocol == 6) protocolStr = L"TCP";
+        else if (ctx->Data.Network.Protocol == 17) protocolStr = L"UDP";
+        else if (ctx->Data.Network.Protocol == 1) protocolStr = L"ICMP";
+
+        if (!ctx->Data.Network.IsIPv6)
+        {
+            ULONG localIp = ctx->Data.Network.Ipv4.LocalAddress;
+            ULONG remoteIp = ctx->Data.Network.Ipv4.RemoteAddress;
+
+            RtlStringCbPrintfW(localIpStr, sizeof(localIpStr),
+                L"%u.%u.%u.%u",
+                (UCHAR)((localIp >> 24) & 0xFF),
+                (UCHAR)((localIp >> 16) & 0xFF),
+                (UCHAR)((localIp >> 8) & 0xFF),
+                (UCHAR)(localIp & 0xFF)
+            );
+
+            RtlStringCbPrintfW(remoteIpStr, sizeof(remoteIpStr),
+                L"%u.%u.%u.%u",
+                (UCHAR)((remoteIp >> 24) & 0xFF),
+                (UCHAR)((remoteIp >> 16) & 0xFF),
+                (UCHAR)((remoteIp >> 8) & 0xFF),
+                (UCHAR)(remoteIp & 0xFF)
+            );
+        }
+        else
+        {
+            UCHAR* localBytes = ctx->Data.Network.Ipv6.LocalAddress;
+            UCHAR* remoteBytes = ctx->Data.Network.Ipv6.RemoteAddress;
+
+            RtlStringCbPrintfW(localIpStr, sizeof(localIpStr),
+                L"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                localBytes[0], localBytes[1], localBytes[2], localBytes[3],
+                localBytes[4], localBytes[5], localBytes[6], localBytes[7],
+                localBytes[8], localBytes[9], localBytes[10], localBytes[11],
+                localBytes[12], localBytes[13], localBytes[14], localBytes[15]);
+
+            RtlStringCbPrintfW(remoteIpStr, sizeof(remoteIpStr),
+                L"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                remoteBytes[0], remoteBytes[1], remoteBytes[2], remoteBytes[3],
+                remoteBytes[4], remoteBytes[5], remoteBytes[6], remoteBytes[7],
+                remoteBytes[8], remoteBytes[9], remoteBytes[10], remoteBytes[11],
+                remoteBytes[12], remoteBytes[13], remoteBytes[14], remoteBytes[15]);
+        }
+
+        /* Address:Port strings*/
+        WCHAR localFull[96] = { 0 };
+        WCHAR remoteFull[96] = { 0 };
+
+        RtlStringCbPrintfW(localFull, sizeof(localFull), L"%s:%u", localIpStr, ctx->Data.Network.LocalPort);
+        RtlStringCbPrintfW(remoteFull, sizeof(remoteFull), L"%s:%u", remoteIpStr, ctx->Data.Network.RemotePort);
+
+        status = RtlStringCbPrintfW(
+            LogBuffer,
+            sizeof(LogBuffer),
+            L"[%s][%s][%u][%wZ][TrafficDir: %wZ][%s -> %s][%s][%d]",
+            timestamp,
+            OperationName,
+            ctx->ProcessId,
+            &ctx->ProcessName,
+            directionStr,
+            localFull,
+            remoteFull,
+            protocolStr,
+            ctx->OperationResult
+        );
+    }
+    else
+    {
+        status = RtlStringCbPrintfW(
+            LogBuffer,
+            sizeof(LogBuffer),
+            L"[%s][%s][%u][%wZ][%wZ][%d][%s]",
+            timestamp,
+            OperationName,
+            ctx->ProcessId,
+            &ctx->ProcessName,
+            &ctx->Data.MiniFilter.TargetPath,
+            ctx->OperationResult,
+            ctx->Data.MiniFilter.Details
+        );
+    }
 
     if (NT_SUCCESS(status))
     {
-        KIRQL OldIrql = ctx->Irql;
-        KeAcquireSpinLock(&ctx->SpinLock, &OldIrql);
+        KeInitializeMutex(&TPMutex, PASSIVE_LEVEL);
+        KeWaitForSingleObject(&TPMutex, Executive, KernelMode, FALSE, NULL);
 
         RtlInitUnicodeString(&LogString, LogBuffer);
         status = CommSendString(&LogString);
 
-        KeReleaseSpinLock(&ctx->SpinLock, OldIrql);
+        KeReleaseMutex(&TPMutex, FALSE);
 
         if (NT_NOT_SUCCESS(status))
         {
@@ -91,8 +174,12 @@ MyWorkItemRoutine(
         }
     }
 
+//CleanUp:
     if (ctx->ProcessName.Buffer) ExFreePoolWithTag(ctx->ProcessName.Buffer, 'FTON');
-    if (ctx->TargetPath.Buffer) ExFreePoolWithTag(ctx->TargetPath.Buffer, 'FTON');
+    if (ctx->NotificationType <= commFileFilter) {
+       if (ctx->Data.MiniFilter.TargetPath.Buffer) ExFreePoolWithTag(ctx->Data.MiniFilter.TargetPath.Buffer, 'FTON');
+    }
+   
     ExFreePoolWithTag(ctx, 'FTON');
 
     return STATUS_SUCCESS;
@@ -200,6 +287,8 @@ TpUninitialize(
         ExFreePoolWithTag(workItem, 'KMSD');
     }
 
+    KeReleaseMutex(&ThreadPool->KMutex, FALSE);
+
     return STATUS_SUCCESS;
 }
 
@@ -219,6 +308,9 @@ TpInit(
     //
     InitializeListHead(&ThreadPool->ListHead);
     KeInitializeSpinLock(&ThreadPool->ListSpinLock);
+
+    // Initialize Mutex needed for the Work item routine
+    KeInitializeMutex(&ThreadPool->KMutex, 0);
 
     //
     // Initialize the events
@@ -264,7 +356,6 @@ TpInit(
         {
             TpUninitialize(ThreadPool);
             return status;
-
         }
         else
         {

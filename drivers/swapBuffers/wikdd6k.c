@@ -11,7 +11,7 @@
 #include "include\filter\image.h"
 #include "include\filter\registry.h"
 #include "include\filter\file.h"
-
+#include "include\filter\network.h"
 GLOBAL_DATA gDrv;
 
 //PFLT_FILTER gFilterRegistration = NULL;
@@ -125,6 +125,25 @@ CONST FLT_REGISTRATION FilterRegistration = {
     NULL                                //  NormalizeNameComponent
 };
 
+VOID
+DriverUnload(
+    _In_ PDRIVER_OBJECT DriverObject
+)
+{
+    UNREFERENCED_PARAMETER(DriverObject);
+
+    /* Unregister the network filter. */
+    DriverUnregisterNetworkFilter();
+
+    /* We no longer need the device object. */
+    if (NULL != gNetworkDeviceObject)
+    {
+        IoDeleteDevice(gNetworkDeviceObject);
+        gNetworkDeviceObject = NULL;
+    }
+}
+
+
 NTSTATUS
 DriverEntry(
     _In_ PDRIVER_OBJECT DriverObject,
@@ -144,6 +163,44 @@ DriverEntry(
     gDrv.MonitoringFlags = commNone;
     TpInit(&gDrv.ThreadPool, MAX_NUMBER_THREADS);
 
+    /*
+     * Intermezzo: Initialize Network filter: Start 
+     */
+    NTSTATUS status = STATUS_UNSUCCESSFUL;
+
+    /* Set unload routine. */
+    DriverObject->DriverUnload = DriverUnload;
+
+    /* Create the device for being associated with network filter. */
+    status = IoCreateDevice(
+        DriverObject,
+        0,
+        NULL,
+        FILE_DEVICE_NETWORK,
+        FILE_DEVICE_SECURE_OPEN,
+        FALSE,
+        &gNetworkDeviceObject
+    );
+    if (!NT_SUCCESS(status))
+    {
+        gNetworkDeviceObject = NULL;
+        return status;
+    }
+
+    /* Register the network filter callouts. */
+    status = DriverRegisterNetworkFilter();
+    if (!NT_SUCCESS(status))
+    {
+        IoDeleteDevice(gNetworkDeviceObject);
+        gNetworkDeviceObject = NULL;
+
+        return status;
+    }
+
+    /*
+     * Intermezzo: Initialize Network filter: End
+     */
+
     //
     // We will need ZwQueryInformationProcess for process names
     //
@@ -160,7 +217,7 @@ DriverEntry(
     //
     //  Register with FltMgr to tell it our callback routines
     //
-    NTSTATUS status = FltRegisterFilter(
+    status = FltRegisterFilter(
         DriverObject,
         &FilterRegistration,
         &gDrv.FilterHandle
@@ -184,6 +241,7 @@ DriverEntry(
             return status_init_comm_port;
         }
 
+        /* Why let some old code blow my new code? :>
         NTSTATUS status_init_proc_flt = ProcessFilterInitialize();
         if (NT_NOT_SUCCESS(status_init_proc_flt))
         {
@@ -220,7 +278,7 @@ DriverEntry(
             CommUninitializeFilterCommunicationPort();
             FltUnregisterFilter(gDrv.FilterHandle);
             return status_init_reg_flt;
-        }
+        }*/
 
 
         //

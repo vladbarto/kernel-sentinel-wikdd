@@ -1,20 +1,416 @@
-// user-mode-console-app.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
+//   Copyright (C) 2018 BitDefender S.R.L.
+//   Author(s)    : Andrei-Marius MUNTEA(amuntea@bitdefender.com)
+//                  Vlad BARTOLOMEI (vlad.bartolomei@outlook.com)
+//
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdlib.h>
+#include <stdio.h>
+#include <Ws2tcpip.h>
+#include <fwpmu.h>
+#include <malloc.h>
+#include <vector>
 
-#include <iostream>
+#pragma comment (lib, "Fwpuclnt.lib")
+#pragma comment (lib, "Ws2_32.lib")
 
-int main()
+#define OPT_INAVLID	0
+#define OPT_LIST	1
+#define OPT_ADD		2
+#define OPT_DELETE	3
+#define OPT_HELP	128
+
+void PrintHelp(char* ExecutableName)
 {
-    std::cout << "Hello World!\n";
+    printf("%s help|list|add|del\n", ExecutableName);
+    printf("\n");
+    printf("	help\n");
+    printf("	list\n");
+    printf("	add <process>|* <domain>|*\n");
+    printf("	del <filter-id>\n");
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+/*
+ * We will go for the bonus (Servus Andrei ^^) as well. Approach:
+ * 1. create a allowConditions array and a allowFilter
+ * 2. set priority or weight higher than the one we'll also set for deny filter. We want first to have allow filter
+ * 3. create a denyConditions array and a denyFilter
+ * 
+ */
+DWORD AddRule(HANDLE hEngine, wchar_t* Process, wchar_t* Domain)
+{
+    DWORD error = 0;
+    FWPM_FILTER allowFilter = { 0 };
+    FWPM_FILTER denyFilter = { 0 };
+    FWPM_FILTER_CONDITION allowConditions[2] = { 0 };
+    FWPM_FILTER_CONDITION denyConditions[1] = { 0 };
+    FWP_V4_ADDR_AND_MASK* addrAndMask;
+    FWP_BYTE_BLOB* pAppId = NULL;
+    ADDRINFOW getAddrHints = { 0 };
+    ADDRINFOW* plIpAddrInfo = NULL;
+    struct sockaddr_in* pSockAddr = NULL;
+    DWORD ipAddress = 0;
+    ADDRINFOW* currentAddr = NULL;
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+    /* Filter IDs vector to be able to delete filters at the end*/
+    std::vector<UINT64> filterIDs;
+
+    /* Translate the full file name to the app id.*/
+    /* Example: "C:\Program Files\Google\Chrome\Application\chrome.exe" to <unique id> */
+    error = FwpmGetAppIdFromFileName(Process, &pAppId);
+    if (ERROR_SUCCESS != error)
+    {
+        printf("FwpmGetAppIdFromFileName returned: %d!\n", error);
+        wprintf(L"Application name: %s\n", Process);
+        goto cleanup;
+    }
+
+    /* Translate the domain to the IP address. */
+    /* Example: ro.wikipedia.org to 185.15.59.224. */
+    memset(&getAddrHints, 0, sizeof(ADDRINFOW));
+    getAddrHints.ai_family = AF_INET;
+    error = GetAddrInfoW (
+        Domain,
+        NULL,
+        &getAddrHints,
+        &plIpAddrInfo
+    );
+    if (0 != error || AF_INET != plIpAddrInfo->ai_family)
+    {
+        printf("GetAddrInfoW returned: %d!\n", error);
+        wprintf(L"Domain name:%s\n", Domain);
+        goto cleanup;
+    }
+
+    currentAddr = plIpAddrInfo;
+
+    /* Why? Well we have more addresses for ro.wikipedia.org */
+    while (currentAddr != NULL)
+    {
+        /* We need to convert from network to host byte ordering. */
+        pSockAddr = (struct sockaddr_in*)currentAddr->ai_addr;
+        ipAddress = ntohl(pSockAddr->sin_addr.S_un.S_addr);
+        printf("IP: %d.%d.%d.%d\n",
+            ipAddress >> 24,
+            (ipAddress & 0x00FF0000) >> 16,
+            (ipAddress & 0x0000FF00) >> 8,
+            (ipAddress & 0x000000FF));
+
+        addrAndMask = (FWP_V4_ADDR_AND_MASK*)malloc(sizeof(FWP_V4_ADDR_AND_MASK));
+        ZeroMemory(addrAndMask, sizeof(FWP_V4_ADDR_AND_MASK));
+
+        addrAndMask->addr = ipAddress;
+        addrAndMask->mask = 0xFFFFFFFF;
+
+        /* We'll create an allowing condition. */
+        /* First rule is to allow by APP ID - we want to allow chrome.exe access. */
+        /* We converted firefox.exe to APP ID above - so the first condition is for the process to match the app id.*/
+        ZeroMemory(&allowConditions[0], sizeof(FWPM_FILTER_CONDITION));
+        allowConditions[0].fieldKey = FWPM_CONDITION_ALE_APP_ID;
+        allowConditions[0].matchType = FWP_MATCH_EQUAL;
+        allowConditions[0].conditionValue.type = FWP_BYTE_BLOB_TYPE;
+        allowConditions[0].conditionValue.byteBlob = pAppId;
+
+        ZeroMemory(&allowConditions[1], sizeof(FWPM_FILTER_CONDITION));
+        allowConditions[1].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
+        allowConditions[1].matchType = FWP_MATCH_EQUAL;
+        allowConditions[1].conditionValue.type = FWP_V4_ADDR_MASK;
+        allowConditions[1].conditionValue.v4AddrMask = addrAndMask;
+        printf("Domain %ws was blocked. This is my homework done ^^.\n", Domain);
+
+        /* Now we have the allowing condition (chrome will be allowed access to wikipedia) */
+        /* Now we need to add a filter to the connect layer to describe these two conditions. */
+        /* The display name will be accessible by domain (so in our example "wikipedia") - you can use list to enumerate and find it.*/
+        ZeroMemory(&allowFilter, sizeof(FWPM_FILTER));
+        allowFilter.displayData.name = Domain;
+        allowFilter.displayData.description = NULL;
+        allowFilter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+        allowFilter.numFilterConditions = 2;
+        allowFilter.filterCondition = allowConditions;
+        allowFilter.action.type = FWP_ACTION_PERMIT;
+        allowFilter.weight.type = FWP_UINT8;
+        allowFilter.weight.uint8 = 2; // Higher priority; MSDN: For UINT8, priority in [0, 15] HUH? ok Microsoft
+
+        /* Ok now allowing filter is prepared, coming up next is the denying filter.*/
+        ZeroMemory(&denyConditions[0], sizeof(FWPM_FILTER_CONDITION));
+        denyConditions[0].fieldKey = FWPM_CONDITION_IP_REMOTE_ADDRESS;
+        denyConditions[0].matchType = FWP_MATCH_EQUAL;
+        denyConditions[0].conditionValue.type = FWP_V4_ADDR_MASK;
+        denyConditions[0].conditionValue.v4AddrMask = addrAndMask;
+
+        ZeroMemory(&denyFilter, sizeof(FWPM_FILTER));
+        denyFilter.displayData.name = Domain;
+        denyFilter.displayData.description = NULL;
+        denyFilter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+        denyFilter.numFilterConditions = 1;
+        denyFilter.filterCondition = denyConditions;
+        denyFilter.action.type = FWP_ACTION_BLOCK;
+        denyFilter.weight.type = FWP_UINT8;
+        denyFilter.weight.uint8 = 1; // Higher priority
+
+        /* "Register" the filters*/
+        UINT64 allowFilterId = 0;
+        error = FwpmFilterAdd(hEngine, &allowFilter, NULL, &allowFilterId);
+        if (ERROR_SUCCESS != error)
+        {
+            printf("FwpmFilterAdd returned: %X!\n", error);
+            free(addrAndMask);
+        }
+        filterIDs.push_back(allowFilterId);
+
+        UINT64 denyFilterId = 0;
+        error = FwpmFilterAdd(hEngine, &denyFilter, NULL, &denyFilterId);
+        if (ERROR_SUCCESS != error)
+        {
+            printf("FwpmFilterAdd returned: %X!\n", error);
+            free(addrAndMask);
+        }
+        filterIDs.push_back(denyFilterId);
+
+        currentAddr = currentAddr->ai_next;
+    }
+
+cleanup:
+    if (NULL != pAppId)
+    {
+        FwpmFreeMemory((void**)&pAppId);
+    }
+    if (NULL != plIpAddrInfo)
+    {
+        FreeAddrInfoW(plIpAddrInfo);
+        plIpAddrInfo = NULL;
+    }
+
+    printf("Filter added succesfully. Test it! Now you can introduce any key to get rid of the rule.\r\n");
+    printf("Input: ");
+    int ch; 
+    while ((ch = getchar()) != '\n' && ch != EOF);
+    getchar();
+    while (!filterIDs.empty()) {
+        UINT64 popId = filterIDs.back();
+        FwpmFilterDeleteById(hEngine, popId);
+        filterIDs.pop_back();
+    }
+    
+    return error;
+}
+
+DWORD DeleteRule(HANDLE hEngine, UINT64 FilterId)
+{
+    /* Use list method do find the id. The id is the left hand side number. */
+    /* 68104: Allow inbound UDP traffic to fdphost port 3702 */
+    /* 68612: Wi-Fi Direct ASP Coordination Protocol (UDP-Out) */
+    /* 68444: @FirewallAPI.dll,-80201 */
+    /* 68094: DhcpFirewallPolicy */
+    /* 68594: Network Discovery (SSDP-In) */
+    /* 67979: Microsoft Edge (mDNS-In) */
+
+    DWORD error = FwpmFilterDeleteById(hEngine, FilterId);
+    if (ERROR_SUCCESS != error)
+    {
+        printf("FwpmFilterDeleteById returned: %d!\n", error);
+    }
+
+    return error;
+}
+
+DWORD ListRules(HANDLE hEngine)
+{
+    DWORD error = ERROR_SUCCESS;
+    HANDLE hEnum = NULL;
+    FWPM_FILTER** plEntries = NULL;
+    UINT32 entriesReturned = 0;
+
+    /* Enumerates all existing firewall rules on the machine. */
+    error = FwpmFilterCreateEnumHandle(hEngine,
+        NULL,
+        &hEnum);
+    if (ERROR_SUCCESS != error)
+    {
+        printf("FwpmFilterCreateEnumHandler returned: %d!\n", error);
+        goto cleanup;
+    }
+
+    for (;;)
+    {
+        error = FwpmFilterEnum(hEngine,
+            hEnum,
+            1,
+            &plEntries,
+            &entriesReturned);
+        if (ERROR_SUCCESS != error)
+        {
+            printf("FwpmFilterEnum returned: %d!\n", error);
+            goto cleanup;
+        }
+
+        if (entriesReturned < 1 || NULL == plEntries)
+        {
+            break;
+        }
+        wprintf(L"%llu: %s\n", plEntries[0]->filterId, plEntries[0]->displayData.name);
+        FwpmFreeMemory((void**)&plEntries);
+    }
+
+cleanup:
+    if (NULL != hEnum)
+    {
+        FwpmFilterDestroyEnumHandle(hEngine, hEnum);
+        hEnum = NULL;
+    }
+    return error;
+}
+
+int __cdecl main(int argc, char** argv)
+{
+    DWORD error, option;
+    WORD wWsaVersion;
+    WSADATA wsaData;
+    HANDLE hEngine;
+    BOOL wsaInitialized;
+
+    error = ERROR_SUCCESS;
+    option = OPT_INAVLID;
+    hEngine = NULL;
+    wWsaVersion = MAKEWORD(2, 2);
+    wsaInitialized = FALSE;
+
+    // Get option
+    do
+    {
+        if (argc < 2 || 0 == strcmp("help", argv[1]))
+        {
+            option = OPT_HELP;
+            break;
+        }
+        if (0 == strcmp("list", argv[1]))
+        {
+            option = OPT_LIST;
+            break;
+        }
+        if (0 == strcmp("add", argv[1]))
+        {
+            option = OPT_ADD;
+            break;
+        }
+        if (0 == strcmp("del", argv[1]))
+        {
+            option = OPT_DELETE;
+            break;
+        }
+    } while (0);
+
+    if (OPT_INAVLID == option)
+    {
+        printf("Unknown option: %s!\n", argv[1]);
+        PrintHelp(argv[0]);
+        return 1;
+    }
+
+    // Check input
+    if (OPT_ADD == option && argc != 4)
+    {
+        printf("Not enough arguments for add!\n");
+        return 1;
+    }
+    if (OPT_DELETE == option && argc != 3)
+    {
+        printf("Not enough arguments for delete!\n");
+        return 1;
+    }
+
+    // Initialize WSA environment
+    error = WSAStartup(wWsaVersion, &wsaData);
+    if (0 != error)
+    {
+        printf("failed WSAStartup: %d!\n", error);
+        goto cleanup;
+    }
+    wsaInitialized = TRUE;
+
+    // Open engine
+    error = FwpmEngineOpen(
+        NULL,
+        RPC_C_AUTHN_DEFAULT,
+        NULL,
+        NULL,
+        &hEngine
+    );
+
+    if (ERROR_SUCCESS != error)
+    {
+        printf("Failed opening engine: %d!\n", error);
+        goto cleanup;
+    }
+
+    switch (option)
+    {
+    case OPT_HELP:
+    {
+        PrintHelp(argv[0]);
+        break;
+    }
+    case OPT_ADD:
+    {
+        wchar_t* process, * domain;
+        size_t lenProcess, lenDomain;
+
+        lenProcess = strlen(argv[2]);
+        lenDomain = strlen(argv[3]);
+        process = (wchar_t*)malloc((lenProcess + 1) * sizeof(wchar_t*));
+        domain = (wchar_t*)malloc((lenDomain + 1) * sizeof(wchar_t*));
+        mbstowcs(process, argv[2], lenProcess);
+        process[lenProcess] = L'\x00';
+        mbstowcs(domain, argv[3], lenDomain);
+        domain[lenDomain] = L'\x00';
+
+        error = AddRule(hEngine, process, domain);
+        if (error)
+        {
+            printf("An error has occurred!\n");
+        }
+
+        free(domain);
+        free(process);
+        break;
+    }
+    case OPT_DELETE:
+    {
+        UINT64 filterId;
+
+        filterId = atoll(argv[2]);
+        error = DeleteRule(hEngine, filterId);
+        if (error)
+        {
+            printf("An error has occured!\n");
+        }
+
+        break;
+    }
+    case OPT_LIST:
+    {
+        error = ListRules(hEngine);
+        if (error)
+        {
+            printf("An error has occured!\n");
+        }
+        break;
+    }
+    default:
+        printf("Command not yet implemented!\n");
+    }
+
+cleanup:
+    if (NULL != hEngine)
+    {
+        FwpmEngineClose(hEngine);
+        hEngine = NULL;
+    }
+
+    if (wsaInitialized)
+    {
+        WSACleanup();
+    }
+
+    return error;
+}

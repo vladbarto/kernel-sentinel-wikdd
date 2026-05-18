@@ -113,7 +113,7 @@
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1;NDIS630</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
       <WppEnabled>true</WppEnabled>
@@ -157,7 +157,7 @@
     <ClCompile>
       <TreatWarningAsError>true</TreatWarningAsError>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_WIN2K_COMPAT_SLIST_USAGE;POOL_NX_OPTIN=1;NDIS630</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
     </ClCompile>
@@ -178,11 +178,10 @@
     <ClCompile Include="communication.c" />
     <ClCompile Include="filter\file.c" />
     <ClCompile Include="filter\image.c" />
+    <ClCompile Include="filter\network.c" />
     <ClCompile Include="filter\process.c" />
     <ClCompile Include="filter\registry.c" />
     <ClCompile Include="filter\thread.c" />
-    <ClCompile Include="firewall_km.c" />
-    <ClCompile Include="swapBuffers.c" />
     <ClCompile Include="threadpool.c" />
     <ClCompile Include="utils.c" />
     <ClCompile Include="wikdd6k.c" />
@@ -196,9 +195,9 @@
     <None Exclude="@(None)" Include="*.txt;*.htm;*.html" />
     <None Exclude="@(None)" Include="*.ico;*.cur;*.bmp;*.dlg;*.rct;*.gif;*.jpg;*.jpeg;*.wav;*.jpe;*.tiff;*.tif;*.png;*.rc2" />
     <None Exclude="@(None)" Include="*.def;*.bat;*.hpj;*.asmx" />
-    <None Include="wikdd6k.inf" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\filter\network.h" />
     <ClInclude Exclude="@(ClInclude)" Include="trace.h" />
     <ClInclude Include="include\communication.h" />
     <ClInclude Include="include\communication_protocol.h" />
